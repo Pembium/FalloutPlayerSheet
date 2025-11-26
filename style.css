@@ -20,3 +20,115 @@ section {
   margin: 20px 0;
   border-radius: 6px;
 }
+
+.skill-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.skill-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-name {
+  font-weight: 600;
+}
+
+.skill-linked {
+  color: #bdbdbd;
+  font-size: 0.95em;
+}
+
+.skill-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.skill-sep {
+  margin: 0 6px;
+  color: #888;
+}
+
+.skill-rank {
+  width: 56px;
+}
+
+#special-section .special-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.special-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.special-label {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.special-input {
+  width: 60px;
+  text-align: center;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+.weapon-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.weapon-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 80px 80px 1fr 1fr 1fr 80px 1fr 1fr 80px;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.weapon-actions {
+  margin-left: 12px;
+}
+
+.weapon-grid input,
+.weapon-grid select {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+.weapon-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #eaeaea;
+}
+
+/* Responsive fallbacks */
+@media (max-width: 900px) {
+  .weapon-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
