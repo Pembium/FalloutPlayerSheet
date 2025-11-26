@@ -66,11 +66,18 @@ function calculateDerivedStats() {
   character.derived.initiative = s.perception + s.agility;
   character.derived.defense = s.agility;
 
-  // Calculate current carry weight from weapons
+  // Calculate current carry weight from weapons AND inventory
   character.derived.currentCarryWeight = 0;
+  
   if (Array.isArray(character.weapons)) {
     character.weapons.forEach(w => {
       character.derived.currentCarryWeight += (w.weight || 0);
+    });
+  }
+
+  if (Array.isArray(character.inventory)) {
+    character.inventory.forEach(inv => {
+      character.derived.currentCarryWeight += (inv.weight || 0);
     });
   }
 
@@ -503,6 +510,7 @@ function updateInventory(index, field, value) {
   }
 
   autosave();
+  calculateDerivedStats();
   createInventorySection();
 }
 
