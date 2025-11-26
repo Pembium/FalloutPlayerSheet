@@ -56,15 +56,23 @@ let character = defaultCharacter();
 function calculateDerivedStats() {
   const s = character.special;
 
-  character.derived.maxHP = s.endurance + 5; // Level = 1 by default
-  // Clamp currentHP to not exceed maxHP
+  character.derived.maxHP = s.endurance + 5;
   if (character.derived.currentHP > character.derived.maxHP) {
     character.derived.currentHP = character.derived.maxHP;
   }
 
   character.derived.initiative = s.perception + s.agility;
   character.derived.defense = s.agility;
-  character.derived.carryWeight = s.strength * 10;
+
+  // Calculate current carry weight from weapons
+  character.derived.currentCarryWeight = 0;
+  if (Array.isArray(character.weapons)) {
+    character.weapons.forEach(w => {
+      character.derived.currentCarryWeight += (w.weight || 0);
+    });
+  }
+
+  character.derived.maxCarryWeight = s.strength * 10;
 
   // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
   if (s.strength >= 11) {
@@ -79,7 +87,6 @@ function calculateDerivedStats() {
 
   // Luck points: max = luck stat
   character.derived.maxLuckPoints = s.luck;
-  // Clamp current luck points to not exceed max
   if (character.derived.luckPoints > character.derived.maxLuckPoints) {
     character.derived.luckPoints = character.derived.maxLuckPoints;
   }
@@ -258,13 +265,7 @@ function updateDerivedSection() {
   const html = `
     <h2>Derived Stats</h2>
     <div class="special-field">
-      <label>Max HP</label> <span>${d.maxHP}</span>
-    </div>
-    <div class="special-field">
-      <label>Current HP</label> 
-      <div class="hp-input-group">
-        <input type="number" min="0" max="${d.maxHP}" value="${d.currentHP}" onchange="updateDerivedValue('currentHP', this.value)"> / ${d.maxHP}
-      </div>
+      <label>HP</label> <span>${d.currentHP} / ${d.maxHP}</span>
     </div>
     <div class="special-field">
       <label>Initiative</label> <span>${d.initiative}</span>
@@ -273,13 +274,13 @@ function updateDerivedSection() {
       <label>Defense</label> <span>${d.defense}</span>
     </div>
     <div class="special-field">
-      <label>Carry Weight</label> <span>${d.carryWeight}</span>
+      <label>Weight</label> <span>${d.currentCarryWeight} / ${d.maxCarryWeight}</span>
     </div>
     <div class="special-field">
       <label>Melee Damage</label> <span>+${d.meleeDamage}</span>
     </div>
     <div class="special-field">
-      <label>Luck Points</label>
+      <label>Luck</label>
       <div class="luck-input-group">
         <input type="number" min="0" max="${d.maxLuckPoints}" value="${d.luckPoints}" onchange="updateDerivedValue('luckPoints', this.value)"> / ${d.maxLuckPoints}
       </div>
@@ -431,6 +432,7 @@ function addWeapon() {
   if (!Array.isArray(character.weapons)) character.weapons = [];
   character.weapons.push(defaultWeapon());
   autosave();
+  calculateDerivedStats();
   createWeaponsSection();
 }
 
@@ -446,12 +448,13 @@ function updateWeapon(index, field, value) {
     character.weapons[index][field] = value;
   }
 
-  // If the row is now empty, remove it (players clear row to delete)
+  // If the row is now empty, remove it
   if (isWeaponEmpty(character.weapons[index])) {
     character.weapons.splice(index, 1);
   }
 
   autosave();
+  calculateDerivedStats();
   createWeaponsSection();
 }
 
