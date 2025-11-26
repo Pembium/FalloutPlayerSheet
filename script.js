@@ -396,6 +396,11 @@ function createPerksSection() {
 
   if (!Array.isArray(character.perks)) character.perks = [];
 
+  // Ensure at least one blank row by default
+  if (character.perks.length === 0) {
+    character.perks.push(defaultPerk());
+  }
+
   const tbody = section.querySelector("#perks-tbody");
   tbody.innerHTML = "";
 
@@ -473,6 +478,11 @@ function createInventorySection() {
 
   if (!Array.isArray(character.inventory)) character.inventory = [];
 
+  // Ensure at least one blank row by default
+  if (character.inventory.length === 0) {
+    character.inventory.push(defaultInventoryItem());
+  }
+
   const tbody = section.querySelector("#inventory-tbody");
   tbody.innerHTML = "";
 
@@ -491,6 +501,7 @@ function addInventoryItem() {
   if (!Array.isArray(character.inventory)) character.inventory = [];
   character.inventory.push(defaultInventoryItem());
   autosave();
+  calculateDerivedStats();
   createInventorySection();
 }
 

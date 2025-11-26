@@ -324,3 +324,53 @@ section {
   border: 1px solid #555;
   cursor: pointer;
 }
+
+/* Perks table styling */
+#perks-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+#perks-table th, #perks-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  vertical-align: top;
+}
+
+#perks-table input,
+#perks-table textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+#perks-table textarea {
+  min-height: 36px;
+  max-height: 240px;
+  resize: vertical;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.perk-rank {
+  max-width: 80px;
+  text-align: center;
+}
+
+/* Add perk button */
+#perks-section h2 .add-perk {
+  margin-left: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #eaeaea;
+  border: 1px solid #555;
+  cursor: pointer;
+}
