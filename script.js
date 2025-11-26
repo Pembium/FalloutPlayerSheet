@@ -14,10 +14,23 @@ let character = {
   },
 
   skills: {
-     athletics: { rank: 0, linked: "strength" },
-     smallGuns: { rank: 0, linked: "agility" },
-     bigGuns: { rank: 0, linked: "endurance" },
-     // ...etc
+    athletics:        { rank: 0, linked: "strength" },
+    barter:           { rank: 0, linked: "charisma" },
+    bigGuns:          { rank: 0, linked: "endurance" },
+    energyWeapons:    { rank: 0, linked: "perception" },
+    explosives:       { rank: 0, linked: "perception" },
+    lockpick:         { rank: 0, linked: "perception" },
+    medicine:         { rank: 0, linked: "intelligence" },
+    meleeWeapons:     { rank: 0, linked: "strength" },
+    pilot:            { rank: 0, linked: "perception" },
+    repair:           { rank: 0, linked: "intelligence" },
+    science:          { rank: 0, linked: "intelligence" },
+    smallGuns:        { rank: 0, linked: "agility" },
+    sneak:            { rank: 0, linked: "agility" },
+    speech:           { rank: 0, linked: "charisma" },
+    survival:         { rank: 0, linked: "endurance" },
+    throwing:         { rank: 0, linked: "agility" },
+    unarmed:          { rank: 0, linked: "strength" }
   },
 
   derived: {
