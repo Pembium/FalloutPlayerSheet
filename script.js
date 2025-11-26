@@ -1,4 +1,4 @@
-let character = {
+const defaultCharacter = () => ({
   name: "",
   origin: "",
   background: "",
@@ -43,8 +43,9 @@ let character = {
   perks: [],
   gear: [],
   notes: "",
-};
+});
 
+let character = defaultCharacter();
 
 
 function calculateDerivedStats() {
