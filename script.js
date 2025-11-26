@@ -313,7 +313,7 @@ function updateDerivedSection() {
     </div>
   `;
 
-  document.getElementById("derived-section").innerHTML = html;
+  document.getElementById("player-section").innerHTML = html;
 }
 
 function updatePlayerInfo(field, value) {
