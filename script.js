@@ -290,6 +290,9 @@ function isWeaponEmpty(w) {
          Number(w.weight) === 0;
 }
 
+// Replace the weapons UI functions so rows are only created via the [+] button.
+// Filling a row will NOT auto-create a new row. Clearing a row deletes it.
+
 function createWeaponsSection() {
   const section = document.getElementById("weapons-section");
   section.innerHTML = `
@@ -318,6 +321,7 @@ function createWeaponsSection() {
   // attach add button handler
   const addBtn = section.querySelector('#add-weapon-btn');
   if (addBtn) {
+    addBtn.removeEventListener('click', addWeapon);
     addBtn.addEventListener('click', addWeapon);
   }
 
@@ -328,10 +332,11 @@ function createWeaponsSection() {
   const skillKeys = Object.keys(character.skills);
   const skillOptions = skillKeys.map(k => `<option value="${k}">${formatSkillName(k)}</option>`).join("");
 
+  // Render one row per weapon in model (no auto-empty trailing row)
   character.weapons.forEach((w, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input class="weapon-name" value="${w.name || ""}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
+      <td><input class="weapon-name" value="${escapeHtml(w.name || "")}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
       <td>
         <select class="weapon-skill" onchange="updateWeapon(${idx}, 'skill', this.value)">
           ${skillOptions}
@@ -339,10 +344,10 @@ function createWeaponsSection() {
       </td>
       <td><input class="weapon-small" type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
       <td><input type="checkbox" ${w.tag ? "checked" : ""} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
-      <td><input class="weapon-small" value="${w.damage || ""}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
-      <td><input value="${w.effects || ""}" onchange="updateWeapon(${idx}, 'effects', this.value)"></td>
-      <td><input value="${w.type || ""}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
-      <td><input class="weapon-small" value="${w.rate || ""}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.damage || "")}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
+      <td><input value="${escapeHtml(w.effects || "")}" onchange="updateWeapon(${idx}, 'effects', this.value)"></td>
+      <td><input value="${escapeHtml(w.type || "")}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.rate || "")}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
       <td>
         <select class="weapon-range" onchange="updateWeapon(${idx}, 'range', this.value)">
           <option value="close"${w.range === "close" ? " selected" : ""}>Close</option>
@@ -351,8 +356,8 @@ function createWeaponsSection() {
           <option value="extreme"${w.range === "extreme" ? " selected" : ""}>Extreme</option>
         </select>
       </td>
-      <td><input value="${w.qualities || ""}" onchange="updateWeapon(${idx}, 'qualities', this.value)"></td>
-      <td><input class="weapon-small" value="${w.ammo || ""}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
+      <td><input value="${escapeHtml(w.qualities || "")}" onchange="updateWeapon(${idx}, 'qualities', this.value)"></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.ammo || "")}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
       <td><input class="weapon-small" type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
     `;
     tbody.appendChild(tr);
@@ -372,13 +377,9 @@ function addWeapon() {
   createWeaponsSection();
 }
 
-// When any cell changes, update the model.
-// If a row becomes fully empty it will be removed.
 function updateWeapon(index, field, value) {
   if (!Array.isArray(character.weapons)) character.weapons = [];
-
-  // ensure object exists
-  if (!character.weapons[index]) character.weapons[index] = defaultWeapon();
+  if (!character.weapons[index]) return; // defensive: ignore edits to non-existent rows
 
   if (field === "TN" || field === "weight") {
     character.weapons[index][field] = parseFloat(value) || 0;
@@ -388,24 +389,23 @@ function updateWeapon(index, field, value) {
     character.weapons[index][field] = value;
   }
 
-  // If the row is now empty, remove it.
+  // If the row becomes fully empty, remove it.
   if (isWeaponEmpty(character.weapons[index])) {
     character.weapons.splice(index, 1);
-    autosave();
-    createWeaponsSection();
-    return;
   }
 
   autosave();
   createWeaponsSection();
 }
 
-// keep removeWeapon for compatibility (not used in table mode)
-function removeWeapon(index) {
-  if (!Array.isArray(character.weapons)) return;
-  character.weapons.splice(index, 1);
-  autosave();
-  createWeaponsSection();
+// small helper to escape user values when injecting into inputs
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // add helper to ensure loaded character has the expected shape
