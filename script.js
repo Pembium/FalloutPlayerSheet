@@ -284,7 +284,7 @@ function isWeaponEmpty(w) {
          !w.effects &&
          !w.type &&
          !w.rate &&
-         (!w.range || w.range === "close") && // treat default range as empty
+         (!w.range || w.range === "close") &&
          !w.qualities &&
          !w.ammo &&
          Number(w.weight) === 0;
@@ -293,7 +293,7 @@ function isWeaponEmpty(w) {
 function createWeaponsSection() {
   const section = document.getElementById("weapons-section");
   section.innerHTML = `
-    <h2>Weapons</h2>
+    <h2>Weapons <button id="add-weapon-btn" class="add-weapon">+</button></h2>
     <table id="weapons-table">
       <thead>
         <tr>
@@ -315,13 +315,14 @@ function createWeaponsSection() {
     </table>
   `;
 
+  // attach add button handler
+  const addBtn = section.querySelector('#add-weapon-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', addWeapon);
+  }
+
   // ensure weapons array exists
   if (!Array.isArray(character.weapons)) character.weapons = [];
-
-  // always keep a trailing empty row for new entry
-  if (character.weapons.length === 0 || !isWeaponEmpty(character.weapons[character.weapons.length - 1])) {
-    character.weapons.push(defaultWeapon());
-  }
 
   const tbody = section.querySelector("#weapons-tbody");
   const skillKeys = Object.keys(character.skills);
@@ -330,20 +331,20 @@ function createWeaponsSection() {
   character.weapons.forEach((w, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input value="${w.name || ""}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
+      <td><input class="weapon-name" value="${w.name || ""}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
       <td>
-        <select onchange="updateWeapon(${idx}, 'skill', this.value)">
+        <select class="weapon-skill" onchange="updateWeapon(${idx}, 'skill', this.value)">
           ${skillOptions}
         </select>
       </td>
-      <td><input type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
+      <td><input class="weapon-small" type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
       <td><input type="checkbox" ${w.tag ? "checked" : ""} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
-      <td><input value="${w.damage || ""}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
+      <td><input class="weapon-small" value="${w.damage || ""}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
       <td><input value="${w.effects || ""}" onchange="updateWeapon(${idx}, 'effects', this.value)"></td>
       <td><input value="${w.type || ""}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
-      <td><input value="${w.rate || ""}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
+      <td><input class="weapon-small" value="${w.rate || ""}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
       <td>
-        <select onchange="updateWeapon(${idx}, 'range', this.value)">
+        <select class="weapon-range" onchange="updateWeapon(${idx}, 'range', this.value)">
           <option value="close"${w.range === "close" ? " selected" : ""}>Close</option>
           <option value="medium"${w.range === "medium" ? " selected" : ""}>Medium</option>
           <option value="long"${w.range === "long" ? " selected" : ""}>Long</option>
@@ -351,20 +352,28 @@ function createWeaponsSection() {
         </select>
       </td>
       <td><input value="${w.qualities || ""}" onchange="updateWeapon(${idx}, 'qualities', this.value)"></td>
-      <td><input value="${w.ammo || ""}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
-      <td><input type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
+      <td><input class="weapon-small" value="${w.ammo || ""}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
+      <td><input class="weapon-small" type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
     `;
     tbody.appendChild(tr);
 
-    // set the select's value after insertion (so current skill shows)
-    const sel = tr.querySelector("select");
-    if (sel && w.skill) sel.value = w.skill;
+    // ensure selects show current values
+    const skillSel = tr.querySelector(".weapon-skill");
+    if (skillSel && w.skill) skillSel.value = w.skill;
+    const rangeSel = tr.querySelector(".weapon-range");
+    if (rangeSel && w.range) rangeSel.value = w.range;
   });
 }
 
+function addWeapon() {
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+  character.weapons.push(defaultWeapon());
+  autosave();
+  createWeaponsSection();
+}
+
 // When any cell changes, update the model.
-// Adding a non-empty last row will automatically append a new empty row.
-// Clearing a non-last row (all fields empty/default) will remove that row.
+// If a row becomes fully empty it will be removed.
 function updateWeapon(index, field, value) {
   if (!Array.isArray(character.weapons)) character.weapons = [];
 
@@ -379,16 +388,12 @@ function updateWeapon(index, field, value) {
     character.weapons[index][field] = value;
   }
 
-  const lastIdx = character.weapons.length - 1;
-
-  // If edited row is the last row and it's no longer empty, append a new empty row
-  if (index === lastIdx && !isWeaponEmpty(character.weapons[index])) {
-    character.weapons.push(defaultWeapon());
-  }
-
-  // If edited row is not the last and is now empty, remove it
-  if (index !== lastIdx && isWeaponEmpty(character.weapons[index])) {
+  // If the row is now empty, remove it.
+  if (isWeaponEmpty(character.weapons[index])) {
     character.weapons.splice(index, 1);
+    autosave();
+    createWeaponsSection();
+    return;
   }
 
   autosave();

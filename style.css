@@ -132,3 +132,35 @@ section {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Narrow inputs used for small numeric/short text fields in weapons table */
+#weapons-table .weapon-small {
+  width: 56px;
+  max-width: 80px;
+  text-align: center;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+/* style the add button */
+#weapons-section h2 .add-weapon {
+  margin-left: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #eaeaea;
+  border: 1px solid #555;
+  cursor: pointer;
+}
+
+/* ensure table inputs inherit base styling */
+#weapons-table input, #weapons-table select {
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
