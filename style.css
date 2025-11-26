@@ -222,3 +222,21 @@ section {
   border: 1px solid #555;
   cursor: pointer;
 }
+
+.hp-input-group,
+.luck-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hp-input-group input,
+.luck-input-group input {
+  width: 60px;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+  text-align: center;
+}

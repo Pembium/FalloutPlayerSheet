@@ -35,15 +35,19 @@ const defaultCharacter = () => ({
 
   derived: {
      maxHP: 0,
+     currentHP: 0,
      initiative: 0,
      defense: 0,
-     carryWeight: 0
+     carryWeight: 0,
+     meleeDamage: 0,
+     luckPoints: 5,
+     maxLuckPoints: 5
   },
 
   perks: [],
   gear: [],
   notes: "",
-  weapons: []   // added weapons array to character
+  weapons: []
 });
 
 let character = defaultCharacter();
@@ -53,9 +57,32 @@ function calculateDerivedStats() {
   const s = character.special;
 
   character.derived.maxHP = s.endurance + 5; // Level = 1 by default
+  // Clamp currentHP to not exceed maxHP
+  if (character.derived.currentHP > character.derived.maxHP) {
+    character.derived.currentHP = character.derived.maxHP;
+  }
+
   character.derived.initiative = s.perception + s.agility;
   character.derived.defense = s.agility;
   character.derived.carryWeight = s.strength * 10;
+
+  // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
+  if (s.strength >= 11) {
+    character.derived.meleeDamage = 3;
+  } else if (s.strength >= 9) {
+    character.derived.meleeDamage = 2;
+  } else if (s.strength >= 7) {
+    character.derived.meleeDamage = 1;
+  } else {
+    character.derived.meleeDamage = 0;
+  }
+
+  // Luck points: max = luck stat
+  character.derived.maxLuckPoints = s.luck;
+  // Clamp current luck points to not exceed max
+  if (character.derived.luckPoints > character.derived.maxLuckPoints) {
+    character.derived.luckPoints = character.derived.maxLuckPoints;
+  }
 
   updateDerivedSection();
 }
@@ -226,25 +253,53 @@ function formatSkillName(key) {
 
 
 function updateDerivedSection() {
-  const s = character.derived;
+  const d = character.derived;
 
   const html = `
     <h2>Derived Stats</h2>
     <div class="special-field">
-      <label>Max HP</label> <span>${s.maxHP}</span>
+      <label>Max HP</label> <span>${d.maxHP}</span>
     </div>
     <div class="special-field">
-      <label>Initiative</label> <span>${s.initiative}</span>
+      <label>Current HP</label> 
+      <div class="hp-input-group">
+        <input type="number" min="0" max="${d.maxHP}" value="${d.currentHP}" onchange="updateDerivedValue('currentHP', this.value)"> / ${d.maxHP}
+      </div>
     </div>
     <div class="special-field">
-      <label>Defense</label> <span>${s.defense}</span>
+      <label>Initiative</label> <span>${d.initiative}</span>
     </div>
     <div class="special-field">
-      <label>Carry Weight</label> <span>${s.carryWeight}</span>
+      <label>Defense</label> <span>${d.defense}</span>
+    </div>
+    <div class="special-field">
+      <label>Carry Weight</label> <span>${d.carryWeight}</span>
+    </div>
+    <div class="special-field">
+      <label>Melee Damage</label> <span>+${d.meleeDamage}</span>
+    </div>
+    <div class="special-field">
+      <label>Luck Points</label>
+      <div class="luck-input-group">
+        <input type="number" min="0" max="${d.maxLuckPoints}" value="${d.luckPoints}" onchange="updateDerivedValue('luckPoints', this.value)"> / ${d.maxLuckPoints}
+      </div>
     </div>
   `;
 
   document.getElementById("derived-section").innerHTML = html;
+}
+
+function updateDerivedValue(field, value) {
+  const numValue = parseInt(value) || 0;
+  
+  if (field === "currentHP") {
+    character.derived.currentHP = Math.max(0, Math.min(numValue, character.derived.maxHP));
+  } else if (field === "luckPoints") {
+    character.derived.luckPoints = Math.max(0, Math.min(numValue, character.derived.maxLuckPoints));
+  }
+
+  autosave();
+  updateDerivedSection();
 }
 
 
