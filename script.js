@@ -412,6 +412,156 @@ function updateInventory(index, field, value) {
   createInventorySection();
 }
 
+// helper: default weapon shape
+function defaultWeapon() {
+  const firstSkill = Object.keys(character.skills)[0] || "";
+  return {
+    name: "",
+    skill: firstSkill,
+    TN: 0,
+    tag: false,
+    damage: "",
+    effects: "",
+    type: "",
+    rate: "",
+    range: "close",
+    qualities: "",
+    ammo: "",
+    weight: 0
+  };
+}
+
+function isWeaponEmpty(w) {
+  if (!w) return true;
+  return !w.name &&
+         (!w.skill || w.skill === "") &&
+         Number(w.TN) === 0 &&
+         !w.tag &&
+         !w.damage &&
+         !w.effects &&
+         !w.type &&
+         !w.rate &&
+         (!w.range || w.range === "close") &&
+         !w.qualities &&
+         !w.ammo &&
+         Number(w.weight) === 0;
+}
+
+function createWeaponsSection() {
+  const section = document.getElementById("weapons-section");
+  section.innerHTML = `
+    <h2>Weapons <button id="add-weapon-btn" class="add-weapon">+</button></h2>
+    <table id="weapons-table">
+      <thead>
+        <tr>
+          <th style="width:18%;">Name</th>
+          <th style="width:10%;">Skill</th>
+          <th style="width:4%;">TN</th>
+          <th style="width:4%;">TAG</th>
+          <th style="width:8%;">Damage</th>
+          <th style="width:15%;">Effects</th>
+          <th style="width:8%;">Type</th>
+          <th style="width:5%;">Rate</th>
+          <th style="width:6%;">Range</th>
+          <th style="width:10%;">Qualities</th>
+          <th style="width:4%;">AMMO</th>
+          <th style="width:6%;">Weight</th>
+        </tr>
+      </thead>
+      <tbody id="weapons-tbody"></tbody>
+    </table>
+  `;
+
+  const addBtn = section.querySelector('#add-weapon-btn');
+  if (addBtn) {
+    addBtn.removeEventListener('click', addWeapon);
+    addBtn.addEventListener('click', addWeapon);
+  }
+
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+
+  // Ensure at least one row exists by default
+  if (character.weapons.length === 0) {
+    character.weapons.push(defaultWeapon());
+  }
+
+  const tbody = section.querySelector("#weapons-tbody");
+  tbody.innerHTML = "";
+  const skillKeys = Object.keys(character.skills);
+  const skillOptions = skillKeys.map(k => `<option value="${k}">${formatSkillName(k)}</option>`).join("");
+
+  character.weapons.forEach((w, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><textarea class="weapon-name" onchange="updateWeapon(${idx}, 'name', this.value)">${escapeHtml(w.name || "")}</textarea></td>
+      <td>
+        <select class="weapon-skill" onchange="updateWeapon(${idx}, 'skill', this.value)">
+          ${skillOptions}
+        </select>
+      </td>
+      <td><input class="weapon-small" type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
+      <td><input type="checkbox" ${w.tag ? "checked" : ""} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.damage || "")}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
+      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'effects', this.value)">${escapeHtml(w.effects || "")}</textarea></td>
+      <td><input value="${escapeHtml(w.type || "")}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.rate || "")}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
+      <td>
+        <select class="weapon-range" onchange="updateWeapon(${idx}, 'range', this.value)">
+          <option value="close"${w.range === "close" ? " selected" : ""}>Close</option>
+          <option value="medium"${w.range === "medium" ? " selected" : ""}>Medium</option>
+          <option value="long"${w.range === "long" ? " selected" : ""}>Long</option>
+          <option value="extreme"${w.range === "extreme" ? " selected" : ""}>Extreme</option>
+        </select>
+      </td>
+      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'qualities', this.value)">${escapeHtml(w.qualities || "")}</textarea></td>
+      <td><input class="weapon-small" value="${escapeHtml(w.ammo || "")}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
+      <td><input class="weapon-small" type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
+    `;
+    tbody.appendChild(tr);
+
+    const skillSel = tr.querySelector(".weapon-skill");
+    if (skillSel && w.skill) skillSel.value = w.skill;
+    const rangeSel = tr.querySelector(".weapon-range");
+    if (rangeSel && w.range) rangeSel.value = w.range;
+  });
+}
+
+function addWeapon() {
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+  character.weapons.push(defaultWeapon());
+  autosave();
+  calculateDerivedStats();
+  createWeaponsSection();
+}
+
+function updateWeapon(index, field, value) {
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+  if (!character.weapons[index]) return;
+
+  if (field === "TN" || field === "weight") {
+    character.weapons[index][field] = parseFloat(value) || 0;
+  } else if (field === "tag") {
+    character.weapons[index][field] = !!value;
+  } else {
+    character.weapons[index][field] = value;
+  }
+
+  if (isWeaponEmpty(character.weapons[index])) {
+    character.weapons.splice(index, 1);
+  }
+
+  autosave();
+  calculateDerivedStats();
+  createWeaponsSection();
+}
+
+function removeWeapon(index) {
+  if (!Array.isArray(character.weapons)) return;
+  character.weapons.splice(index, 1);
+  autosave();
+  createWeaponsSection();
+}
+
 // small helper to escape user values when injecting into inputs
 function escapeHtml(str) {
   return String(str)
