@@ -77,7 +77,8 @@ function loadCharacter(file) {
   const reader = new FileReader();
 
   reader.onload = (e) => {
-    character = JSON.parse(e.target.result);
+    const parsed = JSON.parse(e.target.result);
+    character = ensureCharacterShape(parsed);
     rebuildUIFromCharacter();
   };
 
@@ -106,7 +107,12 @@ setInterval(autosave, 2000);
 window.onload = () => {
   const saved = localStorage.getItem("falloutCharacter");
   if (saved) {
-    character = JSON.parse(saved);
+    try {
+      character = ensureCharacterShape(JSON.parse(saved));
+    } catch (err) {
+      console.error("Failed to parse saved character, using defaults.", err);
+      character = defaultCharacter();
+    }
   }
   rebuildUIFromCharacter();
 };
@@ -395,4 +401,25 @@ function removeWeapon(index) {
   character.weapons.splice(index, 1);
   autosave();
   createWeaponsSection();
+}
+
+// add helper to ensure loaded character has the expected shape
+function ensureCharacterShape(ch) {
+  const def = defaultCharacter();
+  if (!ch || typeof ch !== 'object') return def;
+
+  const out = Object.assign({}, def, ch);
+
+  // Ensure nested objects/arrays exist and merge shallowly
+  for (const key of Object.keys(def)) {
+    if (Array.isArray(def[key])) {
+      out[key] = Array.isArray(ch[key]) ? ch[key] : def[key].slice();
+    } else if (def[key] && typeof def[key] === 'object') {
+      out[key] = Object.assign({}, def[key], (ch[key] || {}));
+    } else {
+      out[key] = (ch[key] !== undefined) ? ch[key] : def[key];
+    }
+  }
+
+  return out;
 }
