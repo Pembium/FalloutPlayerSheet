@@ -164,3 +164,61 @@ section {
   background: #333;
   color: #eee;
 }
+
+#weapons-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* allow cells to wrap and expand vertically */
+}
+
+#weapons-table th, #weapons-table td {
+  padding: 6px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+/* make inputs/selects/textarea fill cell and wrap */
+#weapons-table input,
+#weapons-table select,
+#weapons-table textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+/* multi-line fields */
+#weapons-table textarea {
+  min-height: 34px;
+  max-height: 240px;
+  resize: vertical;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* narrow fields (TN, Damage, Rate, AMMO, Weight) */
+#weapons-table .weapon-small {
+  width: 56px;
+  max-width: 80px;
+  text-align: center;
+}
+
+/* small tweak for name / large text cells */
+#weapons-table .weapon-large {
+  min-height: 36px;
+}
+
+/* keep add button style */
+#weapons-section h2 .add-weapon {
+  margin-left: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #eaeaea;
+  border: 1px solid #555;
+  cursor: pointer;
+}
