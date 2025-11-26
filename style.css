@@ -1,0 +1,22 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #1d1d1d;
+  color: #eaeaea;
+  margin: 0;
+  padding: 20px;
+}
+
+#app-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+  background: #2a2a2a;
+  border-radius: 8px;
+}
+
+section {
+  border: 1px solid #444;
+  padding: 15px;
+  margin: 20px 0;
+  border-radius: 6px;
+}
