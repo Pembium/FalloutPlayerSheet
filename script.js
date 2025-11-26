@@ -53,8 +53,7 @@ const defaultCharacter = () => ({
   weapons: []
 });
 
-let character = defaultCharacter();
-
+// ...existing code...
 
 function calculateDerivedStats() {
   const s = character.special;
@@ -109,7 +108,6 @@ function saveCharacter() {
   a.click();
 }
 
-
 function loadCharacter(file) {
   const reader = new FileReader();
 
@@ -122,17 +120,14 @@ function loadCharacter(file) {
   reader.readAsText(file);
 }
 
-document.getElementById("reset-btn").addEventListener("click", resetCharacter);
-
-
-document.getElementById("load-btn").addEventListener("click", () => {
-  document.getElementById("load-file").click();
-});
-
-document.getElementById("load-file").addEventListener("change", (event) => {
-  loadCharacter(event.target.files[0]);
-});
-
+// DELETE THESE LINES - they run before DOM is ready:
+// document.getElementById("reset-btn").addEventListener("click", resetCharacter);
+// document.getElementById("load-btn").addEventListener("click", () => {
+//   document.getElementById("load-file").click();
+// });
+// document.getElementById("load-file").addEventListener("change", (event) => {
+//   loadCharacter(event.target.files[0]);
+// });
 
 function autosave() {
   localStorage.setItem("falloutCharacter", JSON.stringify(character));
@@ -151,6 +146,27 @@ window.onload = () => {
       character = defaultCharacter();
     }
   }
+
+  // NOW attach all button listeners (DOM is ready)
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
+
+  const resetBtn = document.getElementById("reset-btn");
+  if (resetBtn) resetBtn.addEventListener("click", resetCharacter);
+
+  const loadBtn = document.getElementById("load-btn");
+  if (loadBtn) loadBtn.addEventListener("click", () => {
+    const loadFileInput = document.getElementById("load-file");
+    if (loadFileInput) loadFileInput.click();
+  });
+
+  const loadFileInput = document.getElementById("load-file");
+  if (loadFileInput) {
+    loadFileInput.addEventListener("change", (event) => {
+      if (event.target.files[0]) loadCharacter(event.target.files[0]);
+    });
+  }
+
   rebuildUIFromCharacter();
 };
 
@@ -332,7 +348,85 @@ function rebuildUIFromCharacter() {
   createSkillFields();
   createWeaponsSection();
   createInventorySection();
+  createPerksSection();
   calculateDerivedStats();
+}
+
+// Perks helpers
+function defaultPerk() {
+  return { name: "", rank: 0, effect: "" };
+}
+
+function isPerkEmpty(perk) {
+  if (!perk) return true;
+  return !perk.name && Number(perk.rank) === 0 && !perk.effect;
+}
+
+function createPerksSection() {
+  const section = document.getElementById("perks-section");
+  
+  if (!section) return; // safety check
+  
+  section.innerHTML = `
+    <h2>Perks & Traits <button id="add-perk-btn" class="add-perk">+</button></h2>
+    <table id="perks-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Rank</th>
+          <th>Effect</th>
+        </tr>
+      </thead>
+      <tbody id="perks-tbody"></tbody>
+    </table>
+  `;
+
+  const addBtn = section.querySelector('#add-perk-btn');
+  if (addBtn) {
+    addBtn.removeEventListener('click', addPerk);
+    addBtn.addEventListener('click', addPerk);
+  }
+
+  if (!Array.isArray(character.perks)) character.perks = [];
+
+  const tbody = section.querySelector("#perks-tbody");
+  tbody.innerHTML = "";
+
+  character.perks.forEach((perk, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input class="perk-name" type="text" value="${escapeHtml(perk.name || "")}" onchange="updatePerk(${idx}, 'name', this.value)"></td>
+      <td><input class="perk-rank" type="number" min="0" value="${perk.rank || 0}" onchange="updatePerk(${idx}, 'rank', this.value)"></td>
+      <td><textarea class="perk-effect" onchange="updatePerk(${idx}, 'effect', this.value)">${escapeHtml(perk.effect || "")}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addPerk() {
+  if (!Array.isArray(character.perks)) character.perks = [];
+  character.perks.push(defaultPerk());
+  autosave();
+  createPerksSection();
+}
+
+function updatePerk(index, field, value) {
+  if (!Array.isArray(character.perks)) character.perks = [];
+  if (!character.perks[index]) return;
+
+  if (field === "rank") {
+    character.perks[index][field] = parseInt(value) || 0;
+  } else {
+    character.perks[index][field] = value;
+  }
+
+  // If row is now empty, remove it
+  if (isPerkEmpty(character.perks[index])) {
+    character.perks.splice(index, 1);
+  }
+
+  autosave();
+  createPerksSection();
 }
 
 // Inventory helpers
