@@ -81,7 +81,7 @@ function calculateDerivedStats() {
     });
   }
 
-  character.derived.maxCarryWeight = s.strength * 10;
+  character.derived.maxCarryWeight = 100 + s.strength * 10;
 
   // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
   if (s.strength >= 11) {
@@ -127,14 +127,6 @@ function loadCharacter(file) {
   reader.readAsText(file);
 }
 
-// DELETE THESE LINES - they run before DOM is ready:
-// document.getElementById("reset-btn").addEventListener("click", resetCharacter);
-// document.getElementById("load-btn").addEventListener("click", () => {
-//   document.getElementById("load-file").click();
-// });
-// document.getElementById("load-file").addEventListener("change", (event) => {
-//   loadCharacter(event.target.files[0]);
-// });
 
 function autosave() {
   localStorage.setItem("falloutCharacter", JSON.stringify(character));
