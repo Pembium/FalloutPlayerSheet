@@ -40,9 +40,12 @@ let character = {
      carryWeight: 0
   },
 
+  perks: [],
   gear: [],
   notes: "",
 };
+
+
 
 function calculateDerivedStats() {
   const s = character.special;
@@ -79,6 +82,8 @@ function loadCharacter(file) {
   reader.readAsText(file);
 }
 
+document.getElementById("reset-btn").addEventListener("click", resetCharacter);
+
 
 document.getElementById("load-btn").addEventListener("click", () => {
   document.getElementById("load-file").click();
@@ -104,6 +109,19 @@ window.onload = () => {
   rebuildUIFromCharacter();
 };
 
+function resetCharacter() {
+  // Replace character with fresh default
+  character = defaultCharacter();
+
+  // Clear autosave to prevent reload overwriting the reset
+  localStorage.removeItem("falloutCharacter");
+
+  // Rebuild everything in the UI
+  rebuildUIFromCharacter();
+
+  // Recalculate stats immediately
+  calculateDerivedStats();
+}
 
 function createSpecialFields() {
   const section = document.getElementById("special-section");
