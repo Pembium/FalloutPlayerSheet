@@ -58,7 +58,7 @@ const defaultCharacter = () => ({
 function calculateDerivedStats() {
   const s = character.special;
 
-  character.derived.maxHP = s.endurance + 5;
+  character.derived.maxHP = s.endurance + s.luck;
   if (character.derived.currentHP > character.derived.maxHP) {
     character.derived.currentHP = character.derived.maxHP;
   }
