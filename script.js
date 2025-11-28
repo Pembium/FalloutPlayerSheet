@@ -5,14 +5,17 @@ const defaultCharacter = () => ({
   caps: 0,
 
   special: {
-     strength: 5,
-     perception: 5,
-     endurance: 5,
-     charisma: 5,
-     intelligence: 5,
-     agility: 5,
-     luck: 5
+     strength: 4,
+     perception: 4,
+     endurance: 4,
+     charisma: 4,
+     intelligence: 4,
+     agility: 4,
+     luck: 4
   },
+
+  specialPointsRemaining: 14,
+  specialLocked: false,
 
   bodyParts: {
     head: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
@@ -237,7 +240,12 @@ function resetCharacter() {
 
 function createSpecialFields() {
   const section = document.getElementById("special-section");
-  section.innerHTML = "<h2>S.P.E.C.I.A.L</h2>";
+  
+  const headerHtml = character.specialLocked 
+    ? `<h2>S.P.E.C.I.A.L <button id="edit-special-btn" class="edit-special">Edit</button></h2>`
+    : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${character.specialPointsRemaining}</span></h2>`;
+  
+  section.innerHTML = headerHtml;
 
   const stats = Object.keys(character.special);
 
@@ -247,21 +255,73 @@ function createSpecialFields() {
   stats.forEach(stat => {
     const cell = document.createElement("div");
     cell.className = "special-cell";
-    cell.innerHTML = `
-      <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
-      <input class="special-input" type="number" min="1" max="10" value="${character.special[stat]}"
-        onchange="updateSpecial('${stat}', this.value)">
-    `;
+    
+    if (character.specialLocked) {
+      // Display as non-editable span when locked
+      cell.innerHTML = `
+        <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
+        <span class="special-value">${character.special[stat]}</span>
+      `;
+    } else {
+      // Display as editable input when unlocked
+      cell.innerHTML = `
+        <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
+        <input class="special-input" type="number" min="4" max="10" value="${character.special[stat]}"
+          onchange="updateSpecial('${stat}', this.value)">
+      `;
+    }
+    
     row.appendChild(cell);
   });
 
   section.appendChild(row);
+
+  // Attach edit button listener if locked
+  if (character.specialLocked) {
+    const editBtn = section.querySelector('#edit-special-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', unlockSpecial);
+    }
+  }
 }
 
 function updateSpecial(stat, value) {
-  character.special[stat] = parseInt(value);
+  const newValue = parseInt(value);
+  const oldValue = character.special[stat];
+  
+  // Enforce minimum of 4 and maximum of 10
+  if (isNaN(newValue) || newValue < 4 || newValue > 10) {
+    createSpecialFields();
+    return;
+  }
+
+  const pointDiff = newValue - oldValue;
+  
+  // Check if we have enough points
+  if (pointDiff > character.specialPointsRemaining) {
+    // Not enough points, revert to old value
+    createSpecialFields();
+    return;
+  }
+
+  character.special[stat] = newValue;
+  character.specialPointsRemaining -= pointDiff;
+
+  // Auto-lock when points reach 0
+  if (character.specialPointsRemaining <= 0) {
+    character.specialPointsRemaining = 0;
+    character.specialLocked = true;
+  }
+
   autosave();
   calculateDerivedStats();
+  createSpecialFields();
+}
+
+function unlockSpecial() {
+  character.specialLocked = false;
+  autosave();
+  createSpecialFields();
 }
 
 function createSkillFields() {
