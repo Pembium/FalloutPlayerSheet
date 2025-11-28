@@ -241,29 +241,21 @@ function createSpecialFields() {
 
   const stats = Object.keys(character.special);
 
-  const labelRow = document.createElement("div");
-  labelRow.className = "special-row labels";
-
-  const inputRow = document.createElement("div");
-  inputRow.className = "special-row inputs";
+  const row = document.createElement("div");
+  row.className = "special-row";
 
   stats.forEach(stat => {
-    const labelCell = document.createElement("div");
-    labelCell.className = "special-cell";
-    labelCell.innerHTML = `<label class="special-label">${stat.toUpperCase()}</label>`;
-    labelRow.appendChild(labelCell);
-
-    const inputCell = document.createElement("div");
-    inputCell.className = "special-cell";
-    inputCell.innerHTML = `
+    const cell = document.createElement("div");
+    cell.className = "special-cell";
+    cell.innerHTML = `
+      <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
       <input class="special-input" type="number" min="1" max="10" value="${character.special[stat]}"
         onchange="updateSpecial('${stat}', this.value)">
     `;
-    inputRow.appendChild(inputCell);
+    row.appendChild(cell);
   });
 
-  section.appendChild(labelRow);
-  section.appendChild(inputRow);
+  section.appendChild(row);
 }
 
 function updateSpecial(stat, value) {
