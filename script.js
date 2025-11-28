@@ -770,7 +770,21 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
+function createHeader() {
+  const header = document.getElementById("header");
+  header.innerHTML = `
+    <h1>Fallout Character Creator</h1>
+    <div class="header-buttons">
+      <button id="save-btn">Save Character</button>
+      <button id="load-btn">Load Character</button>
+      <input type="file" id="load-file" accept=".json" style="display: none;">
+      <button id="reset-btn">Reset Character</button>
+    </div>
+  `;
+}
+
 function rebuildUIFromCharacter() {
+  createHeader();
   createSpecialFields();
   createSkillFields();
   createBodyPartsSection();
@@ -791,6 +805,9 @@ window.onload = () => {
     }
   }
 
+  rebuildUIFromCharacter();
+
+  // Attach button listeners after UI is built
   const saveBtn = document.getElementById("save-btn");
   if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
 
@@ -809,6 +826,4 @@ window.onload = () => {
       if (event.target.files[0]) loadCharacter(event.target.files[0]);
     });
   }
-
-  rebuildUIFromCharacter();
 };
