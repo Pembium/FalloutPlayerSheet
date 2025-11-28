@@ -14,6 +14,17 @@ const defaultCharacter = () => ({
      luck: 5
   },
 
+  bodyParts: {
+    head: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
+    torso: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
+    leftArm: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
+    rightArm: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
+    leftLeg: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
+    rightLeg: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 }
+  },
+
+  poisonDR: 0,
+
   skills: {
     athletics:        { rank: 0, linked: "strength", trained: false },
     barter:           { rank: 0, linked: "charisma", trained: false },
@@ -53,7 +64,28 @@ const defaultCharacter = () => ({
   weapons: []
 });
 
-// ...existing code...
+let character = defaultCharacter();
+
+// add helper to ensure loaded character has the expected shape
+function ensureCharacterShape(ch) {
+  const def = defaultCharacter();
+  if (!ch || typeof ch !== 'object') return def;
+
+  const out = Object.assign({}, def, ch);
+
+  // Ensure nested objects/arrays exist and merge shallowly
+  for (const key of Object.keys(def)) {
+    if (Array.isArray(def[key])) {
+      out[key] = Array.isArray(ch[key]) ? ch[key] : def[key].slice();
+    } else if (def[key] && typeof def[key] === 'object') {
+      out[key] = Object.assign({}, def[key], (ch[key] || {}));
+    } else {
+      out[key] = (ch[key] !== undefined) ? ch[key] : def[key];
+    }
+  }
+
+  return out;
+}
 
 function calculateDerivedStats() {
   const s = character.special;
@@ -101,8 +133,71 @@ function calculateDerivedStats() {
   }
 
   updateDerivedSection();
+  createBodyPartsSection();
 }
 
+function updateDerivedSection() {
+  const d = character.derived;
+
+  const html = `
+    <h2>Player Info</h2>
+    <div class="player-info-grid">
+      <div class="info-field">
+        <label>Name</label>
+        <input type="text" value="${escapeHtml(character.name)}" onchange="updatePlayerInfo('name', this.value)">
+      </div>
+      <div class="info-field">
+        <label>Origin</label>
+        <input type="text" value="${escapeHtml(character.origin)}" onchange="updatePlayerInfo('origin', this.value)">
+      </div>
+      <div class="info-field">
+        <label>Background</label>
+        <input type="text" value="${escapeHtml(character.background)}" onchange="updatePlayerInfo('background', this.value)">
+      </div>
+      <div class="info-field">
+        <label>Caps</label>
+        <input type="number" min="0" value="${character.caps}" onchange="updatePlayerInfo('caps', this.value)">
+      </div>
+    </div>
+    <div class="derived-stats-grid">
+      <div class="stat-field">
+        <label>Weight</label> <span>${d.currentCarryWeight} / ${d.maxCarryWeight}</span>
+      </div>
+      <div class="stat-field">
+        <label>Luck</label>
+        <div class="luck-input-group">
+          <input type="number" min="0" max="${d.maxLuckPoints}" value="${d.luckPoints}" onchange="updateDerivedValue('luckPoints', this.value)"> / ${d.maxLuckPoints}
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("player-section").innerHTML = html;
+}
+
+function updatePlayerInfo(field, value) {
+  if (field === "caps") {
+    character.caps = parseInt(value) || 0;
+  } else {
+    character[field] = value;
+  }
+  autosave();
+  updateDerivedSection();
+}
+
+function updateDerivedValue(field, value) {
+  const numValue = parseInt(value) || 0;
+  
+  if (field === "currentHP") {
+    character.derived.currentHP = Math.max(0, Math.min(numValue, character.derived.maxHP));
+  } else if (field === "luckPoints") {
+    character.derived.luckPoints = Math.max(0, Math.min(numValue, character.derived.maxLuckPoints));
+  }
+
+  autosave();
+  updateDerivedSection();
+  createBodyPartsSection();
+}
 
 function saveCharacter() {
   const data = JSON.stringify(character, null, 2);
@@ -127,59 +222,16 @@ function loadCharacter(file) {
   reader.readAsText(file);
 }
 
-
 function autosave() {
   localStorage.setItem("falloutCharacter", JSON.stringify(character));
 }
 
 setInterval(autosave, 2000);
 
-// Load existing autosave if present
-window.onload = () => {
-  const saved = localStorage.getItem("falloutCharacter");
-  if (saved) {
-    try {
-      character = ensureCharacterShape(JSON.parse(saved));
-    } catch (err) {
-      console.error("Failed to parse saved character, using defaults.", err);
-      character = defaultCharacter();
-    }
-  }
-
-  // NOW attach all button listeners (DOM is ready)
-  const saveBtn = document.getElementById("save-btn");
-  if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
-
-  const resetBtn = document.getElementById("reset-btn");
-  if (resetBtn) resetBtn.addEventListener("click", resetCharacter);
-
-  const loadBtn = document.getElementById("load-btn");
-  if (loadBtn) loadBtn.addEventListener("click", () => {
-    const loadFileInput = document.getElementById("load-file");
-    if (loadFileInput) loadFileInput.click();
-  });
-
-  const loadFileInput = document.getElementById("load-file");
-  if (loadFileInput) {
-    loadFileInput.addEventListener("change", (event) => {
-      if (event.target.files[0]) loadCharacter(event.target.files[0]);
-    });
-  }
-
-  rebuildUIFromCharacter();
-};
-
 function resetCharacter() {
-  // Replace character with fresh default
   character = defaultCharacter();
-
-  // Clear autosave to prevent reload overwriting the reset
   localStorage.removeItem("falloutCharacter");
-
-  // Rebuild everything in the UI
   rebuildUIFromCharacter();
-
-  // Recalculate stats immediately
   calculateDerivedStats();
 }
 
@@ -216,13 +268,23 @@ function createSpecialFields() {
 
 function updateSpecial(stat, value) {
   character.special[stat] = parseInt(value);
+  autosave();
   calculateDerivedStats();
 }
 
-
 function createSkillFields() {
   const section = document.getElementById("skills-section");
-  section.innerHTML = "<h2>Skills</h2>";
+  section.innerHTML = `
+    <h2>Skills</h2>
+    <div class="skills-header">
+      <div class="skill-header-left">Name</div>
+      <div class="skill-header-right">
+        <span>TAG</span>
+        <span class="skill-sep">|</span>
+        <span>RANK</span>
+      </div>
+    </div>
+  `;
 
   const statAbbr = {
     strength: "STR",
@@ -258,7 +320,7 @@ function createSkillFields() {
 
 function updateSkill(skill, value) {
   character.skills[skill].rank = parseInt(value) || 0;
-  calculateDerivedStats();
+  autosave();
 }
 
 function updateSkillTrained(skill, checked) {
@@ -266,9 +328,7 @@ function updateSkillTrained(skill, checked) {
   autosave();
 }
 
-// small helper to turn camelCase / mixed names into readable labels
 function formatSkillName(key) {
-  // Insert space before caps and capitalize each word
   return key
     .replace(/([A-Z])/g, ' $1')
     .split(' ')
@@ -276,82 +336,130 @@ function formatSkillName(key) {
     .join(' ');
 }
 
+function createBodyPartsSection() {
+  const section = document.getElementById("body-parts-section");
+  if (!section) return;
 
-function updateDerivedSection() {
   const d = character.derived;
+  const bp = character.bodyParts;
 
-  const html = `
-    <h2>Player Info</h2>
-    <div class="player-info-grid">
-      <div class="info-field">
-        <label>Name</label>
-        <input type="text" value="${escapeHtml(character.name)}" onchange="updatePlayerInfo('name', this.value)">
+  section.innerHTML = `
+    <h2>Combat Stats & Body Parts</h2>
+    
+    <div class="combat-stats-row">
+      <div class="stat-field">
+        <label>Initiative</label>
+        <span>${d.initiative}</span>
       </div>
-      <div class="info-field">
-        <label>Origin</label>
-        <input type="text" value="${escapeHtml(character.origin)}" onchange="updatePlayerInfo('origin', this.value)">
+      <div class="stat-field">
+        <label>Defense</label>
+        <span>${d.defense}</span>
       </div>
-      <div class="info-field">
-        <label>Background</label>
-        <input type="text" value="${escapeHtml(character.background)}" onchange="updatePlayerInfo('background', this.value)">
-      </div>
-      <div class="info-field">
-        <label>Caps</label>
-        <input type="number" min="0" value="${character.caps}" onchange="updatePlayerInfo('caps', this.value)">
+      <div class="stat-field">
+        <label>Melee Damage</label>
+        <span>+${d.meleeDamage}</span>
       </div>
     </div>
-    <div class="derived-stats-grid">
-      <div class="stat-field">
-        <label>HP</label>
-        <div class="hp-input-group">
-          <input type="number" min="0" max="${d.maxHP}" value="${d.currentHP}" onchange="updateDerivedValue('currentHP', this.value)"> / ${d.maxHP}
+
+    <div class="body-parts-grid">
+      
+      <div class="body-part-card poison-card">
+        <div class="card-header">POISON DR</div>
+        <input type="number" min="0" class="poison-input" value="${character.poisonDR || 0}" onchange="updatePoisonDR(this.value)">
+      </div>
+
+      <div class="body-part-card health-card">
+        <div class="card-header">HEALTH</div>
+        <div class="health-stats">
+          <div class="stat-row">
+            <label>Maximum HP</label>
+            <span>${d.maxHP}</span>
+          </div>
+          <div class="stat-row">
+            <label>Current HP</label>
+            <div class="hp-input-group">
+              <input type="number" min="0" max="${d.maxHP}" value="${d.currentHP}" onchange="updateDerivedValue('currentHP', this.value)">
+            </div>
+          </div>
         </div>
       </div>
-      <div class="stat-field">
-        <label>Initiative</label> <span>${d.initiative}</span>
-      </div>
-      <div class="stat-field">
-        <label>Defense</label> <span>${d.defense}</span>
-      </div>
-      <div class="stat-field">
-        <label>Weight</label> <span>${d.currentCarryWeight} / ${d.maxCarryWeight}</span>
-      </div>
-      <div class="stat-field">
-        <label>Melee Damage</label> <span>+${d.meleeDamage}</span>
-      </div>
-      <div class="stat-field">
-        <label>Luck</label>
-        <div class="luck-input-group">
-          <input type="number" min="0" max="${d.maxLuckPoints}" value="${d.luckPoints}" onchange="updateDerivedValue('luckPoints', this.value)"> / ${d.maxLuckPoints}
+
+      <div class="body-part-card head-card">
+        <div class="card-header">HEAD (1-2)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.head.physDR}" onchange="updateBodyPart('head', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.head.radDR}" onchange="updateBodyPart('head', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.head.enDR}" onchange="updateBodyPart('head', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.head.currentHP}" onchange="updateBodyPart('head', 'currentHP', this.value)"></div>
         </div>
       </div>
+
+      <div class="body-part-card left-arm-card">
+        <div class="card-header">LEFT ARM (9-11)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftArm.physDR}" onchange="updateBodyPart('leftArm', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftArm.radDR}" onchange="updateBodyPart('leftArm', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftArm.enDR}" onchange="updateBodyPart('leftArm', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.leftArm.currentHP}" onchange="updateBodyPart('leftArm', 'currentHP', this.value)"></div>
+        </div>
+      </div>
+
+      <div class="body-part-card right-arm-card">
+        <div class="card-header">RIGHT ARM (12-14)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightArm.physDR}" onchange="updateBodyPart('rightArm', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightArm.radDR}" onchange="updateBodyPart('rightArm', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightArm.enDR}" onchange="updateBodyPart('rightArm', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.rightArm.currentHP}" onchange="updateBodyPart('rightArm', 'currentHP', this.value)"></div>
+        </div>
+      </div>
+
+      <div class="body-part-card torso-card">
+        <div class="card-header">TORSO (3-8)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.torso.physDR}" onchange="updateBodyPart('torso', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.torso.radDR}" onchange="updateBodyPart('torso', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.torso.enDR}" onchange="updateBodyPart('torso', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.torso.currentHP}" onchange="updateBodyPart('torso', 'currentHP', this.value)"></div>
+        </div>
+      </div>
+
+      <div class="body-part-card left-leg-card">
+        <div class="card-header">LEFT LEG (15-17)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftLeg.physDR}" onchange="updateBodyPart('leftLeg', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftLeg.radDR}" onchange="updateBodyPart('leftLeg', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftLeg.enDR}" onchange="updateBodyPart('leftLeg', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.leftLeg.currentHP}" onchange="updateBodyPart('leftLeg', 'currentHP', this.value)"></div>
+        </div>
+      </div>
+
+      <div class="body-part-card right-leg-card">
+        <div class="card-header">RIGHT LEG (18-20)</div>
+        <div class="body-part-grid">
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightLeg.physDR}" onchange="updateBodyPart('rightLeg', 'physDR', this.value)"></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightLeg.radDR}" onchange="updateBodyPart('rightLeg', 'radDR', this.value)"></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightLeg.enDR}" onchange="updateBodyPart('rightLeg', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.rightLeg.currentHP}" onchange="updateBodyPart('rightLeg', 'currentHP', this.value)"></div>
+        </div>
+      </div>
+
     </div>
   `;
-
-  document.getElementById("player-section").innerHTML = html;
 }
 
-function updatePlayerInfo(field, value) {
-  if (field === "caps") {
-    character.caps = parseInt(value) || 0;
-  } else {
-    character[field] = value;
-  }
+function updateBodyPart(part, field, value) {
+  if (!character.bodyParts[part]) return;
+  character.bodyParts[part][field] = parseInt(value) || 0;
   autosave();
-  updateDerivedSection();
+  createBodyPartsSection();
 }
 
-
-function rebuildUIFromCharacter() {
-  createSpecialFields();
-  createSkillFields();
-  createWeaponsSection();
-  createInventorySection();
-  createPerksSection();
-  calculateDerivedStats();
+function updatePoisonDR(value) {
+  character.poisonDR = parseInt(value) || 0;
+  autosave();
 }
 
-// Perks helpers
 function defaultPerk() {
   return { name: "", rank: 0, effect: "" };
 }
@@ -364,7 +472,7 @@ function isPerkEmpty(perk) {
 function createPerksSection() {
   const section = document.getElementById("perks-section");
   
-  if (!section) return; // safety check
+  if (!section) return;
   
   section.innerHTML = `
     <h2>Perks & Traits <button id="add-perk-btn" class="add-perk">+</button></h2>
@@ -388,7 +496,6 @@ function createPerksSection() {
 
   if (!Array.isArray(character.perks)) character.perks = [];
 
-  // Ensure at least one blank row by default
   if (character.perks.length === 0) {
     character.perks.push(defaultPerk());
   }
@@ -424,7 +531,6 @@ function updatePerk(index, field, value) {
     character.perks[index][field] = value;
   }
 
-  // If row is now empty, remove it
   if (isPerkEmpty(character.perks[index])) {
     character.perks.splice(index, 1);
   }
@@ -433,7 +539,6 @@ function updatePerk(index, field, value) {
   createPerksSection();
 }
 
-// Inventory helpers
 function defaultInventoryItem() {
   return { item: "", quantity: 0, weight: 0 };
 }
@@ -446,7 +551,7 @@ function isInventoryItemEmpty(inv) {
 function createInventorySection() {
   const section = document.getElementById("other-section");
   
-  if (!section) return; // safety check
+  if (!section) return;
   
   section.innerHTML = `
     <h2>Inventory <button id="add-inventory-btn" class="add-inventory">+</button></h2>
@@ -470,7 +575,6 @@ function createInventorySection() {
 
   if (!Array.isArray(character.inventory)) character.inventory = [];
 
-  // Ensure at least one blank row by default
   if (character.inventory.length === 0) {
     character.inventory.push(defaultInventoryItem());
   }
@@ -507,7 +611,6 @@ function updateInventory(index, field, value) {
     character.inventory[index][field] = value;
   }
 
-  // If row is now empty, remove it
   if (isInventoryItemEmpty(character.inventory[index])) {
     character.inventory.splice(index, 1);
   }
@@ -517,7 +620,6 @@ function updateInventory(index, field, value) {
   createInventorySection();
 }
 
-// helper: default weapon shape
 function defaultWeapon() {
   const firstSkill = Object.keys(character.skills)[0] || "";
   return {
@@ -585,7 +687,6 @@ function createWeaponsSection() {
 
   if (!Array.isArray(character.weapons)) character.weapons = [];
 
-  // Ensure at least one row exists by default
   if (character.weapons.length === 0) {
     character.weapons.push(defaultWeapon());
   }
@@ -660,14 +761,6 @@ function updateWeapon(index, field, value) {
   createWeaponsSection();
 }
 
-function removeWeapon(index) {
-  if (!Array.isArray(character.weapons)) return;
-  character.weapons.splice(index, 1);
-  autosave();
-  createWeaponsSection();
-}
-
-// small helper to escape user values when injecting into inputs
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -677,23 +770,45 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;");
 }
 
-// add helper to ensure loaded character has the expected shape
-function ensureCharacterShape(ch) {
-  const def = defaultCharacter();
-  if (!ch || typeof ch !== 'object') return def;
+function rebuildUIFromCharacter() {
+  createSpecialFields();
+  createSkillFields();
+  createBodyPartsSection();
+  createWeaponsSection();
+  createInventorySection();
+  createPerksSection();
+  calculateDerivedStats();
+}
 
-  const out = Object.assign({}, def, ch);
-
-  // Ensure nested objects/arrays exist and merge shallowly
-  for (const key of Object.keys(def)) {
-    if (Array.isArray(def[key])) {
-      out[key] = Array.isArray(ch[key]) ? ch[key] : def[key].slice();
-    } else if (def[key] && typeof def[key] === 'object') {
-      out[key] = Object.assign({}, def[key], (ch[key] || {}));
-    } else {
-      out[key] = (ch[key] !== undefined) ? ch[key] : def[key];
+window.onload = () => {
+  const saved = localStorage.getItem("falloutCharacter");
+  if (saved) {
+    try {
+      character = ensureCharacterShape(JSON.parse(saved));
+    } catch (err) {
+      console.error("Failed to parse saved character, using defaults.", err);
+      character = defaultCharacter();
     }
   }
 
-  return out;
-}
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
+
+  const resetBtn = document.getElementById("reset-btn");
+  if (resetBtn) resetBtn.addEventListener("click", resetCharacter);
+
+  const loadBtn = document.getElementById("load-btn");
+  if (loadBtn) loadBtn.addEventListener("click", () => {
+    const loadFileInput = document.getElementById("load-file");
+    if (loadFileInput) loadFileInput.click();
+  });
+
+  const loadFileInput = document.getElementById("load-file");
+  if (loadFileInput) {
+    loadFileInput.addEventListener("change", (event) => {
+      if (event.target.files[0]) loadCharacter(event.target.files[0]);
+    });
+  }
+
+  rebuildUIFromCharacter();
+};
