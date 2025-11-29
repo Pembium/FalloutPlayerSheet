@@ -21,6 +21,21 @@ const defaultCharacter = () => ({
   specialPointsRemaining: 10,
   specialLocked: false,
 
+  // Add overrides object
+  overrides: {
+    initiative: null,
+    defense: null,
+    meleeDamage: null,
+    maxHP: null,
+    strength: null,
+    perception: null,
+    endurance: null,
+    charisma: null,
+    intelligence: null,
+    agility: null,
+    luck: null
+  },
+
   bodyParts: {
     head: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
     torso: { physDR: 0, radDR: 0, enDR: 0, maxHP: 0, currentHP: 0 },
@@ -94,21 +109,37 @@ function ensureCharacterShape(ch) {
   return out;
 }
 
+function getEffectiveSpecial(stat) {
+  const o = character.overrides || {};
+  const override = o[stat];
+  return override !== null && override !== undefined ? override : character.special[stat];
+}
+
 function calculateDerivedStats() {
-  const s = character.special;
+  const s = {
+    strength: getEffectiveSpecial('strength'),
+    perception: getEffectiveSpecial('perception'),
+    endurance: getEffectiveSpecial('endurance'),
+    charisma: getEffectiveSpecial('charisma'),
+    intelligence: getEffectiveSpecial('intelligence'),
+    agility: getEffectiveSpecial('agility'),
+    luck: getEffectiveSpecial('luck')
+  };
+  const o = character.overrides || {};
 
   // Base HP calculation
-  character.derived.maxHP = s.endurance + s.luck;
-  
-  // Add Life Giver bonus
-  character.derived.maxHP += getPerkBonus("Life Giver", "maxHP");
+  const calcMaxHP = s.endurance + s.luck + getPerkBonus("Life Giver", "maxHP");
+  character.derived.maxHP = o.maxHP !== null && o.maxHP !== undefined ? o.maxHP : calcMaxHP;
   
   if (character.derived.currentHP > character.derived.maxHP) {
     character.derived.currentHP = character.derived.maxHP;
   }
 
-  character.derived.initiative = s.perception + s.agility;
-  character.derived.defense = s.agility;
+  const calcInitiative = s.perception + s.agility;
+  character.derived.initiative = o.initiative !== null && o.initiative !== undefined ? o.initiative : calcInitiative;
+  
+  const calcDefense = s.agility;
+  character.derived.defense = o.defense !== null && o.defense !== undefined ? o.defense : calcDefense;
 
   // Calculate current carry weight from weapons AND inventory
   character.derived.currentCarryWeight = 0;
@@ -129,16 +160,18 @@ function calculateDerivedStats() {
   character.derived.maxCarryWeight = 100 + s.strength * 10;
   character.derived.maxCarryWeight += getPerkBonus("Strong Back", "carryWeight");
 
-  // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
+  // Melee Damage modifier based on Strength
+  let calcMeleeDamage;
   if (s.strength >= 11) {
-    character.derived.meleeDamage = 3;
+    calcMeleeDamage = 3;
   } else if (s.strength >= 9) {
-    character.derived.meleeDamage = 2;
+    calcMeleeDamage = 2;
   } else if (s.strength >= 7) {
-    character.derived.meleeDamage = 1;
+    calcMeleeDamage = 1;
   } else {
-    character.derived.meleeDamage = 0;
+    calcMeleeDamage = 0;
   }
+  character.derived.meleeDamage = o.meleeDamage !== null && o.meleeDamage !== undefined ? o.meleeDamage : calcMeleeDamage;
 
   // Luck points: max = luck stat
   character.derived.maxLuckPoints = s.luck;
@@ -248,22 +281,91 @@ function autosave() {
 setInterval(autosave, 2000);
 
 function resetCharacter() {
+  // Show confirmation dialog with proper warning symbol
+  const confirmed = confirm(
+    "WARNING: This will permanently delete your current character!\n\n" +
+    "This action cannot be undone. All character data will be lost.\n\n" +
+    "Are you sure you want to reset?"
+  );
+  
+  if (!confirmed) {
+    return; // User cancelled, do nothing
+  }
+  
   character = defaultCharacter();
   localStorage.removeItem("falloutCharacter");
+  localStorage.removeItem("combatEditMode"); // Also reset edit mode
   rebuildUIFromCharacter();
   calculateDerivedStats();
 }
 
+function toggleCombatEditMode() {
+  const currentMode = localStorage.getItem("combatEditMode") === "true";
+  localStorage.setItem("combatEditMode", !currentMode);
+  
+  if (!currentMode) {
+    // Entering edit mode - ensure overrides object exists
+    if (!character.overrides) {
+      character.overrides = {
+        initiative: null,
+        defense: null,
+        meleeDamage: null,
+        maxHP: null,
+        strength: null,
+        perception: null,
+        endurance: null,
+        charisma: null,
+        intelligence: null,
+        agility: null,
+        luck: null
+      };
+    }
+  }
+  
+  createHeader(); // Re-render header to update button text
+  createSpecialFields();
+  createBodyPartsSection();
+}
+
+function updateCombatOverride(field, value) {
+  if (!character.overrides) {
+    character.overrides = {};
+  }
+  
+  const numValue = parseInt(value);
+  character.overrides[field] = isNaN(numValue) ? null : numValue;
+  
+  autosave();
+  calculateDerivedStats();
+}
+
+function updateSpecialOverride(stat, value) {
+  if (!character.overrides) {
+    character.overrides = {};
+  }
+  
+  const numValue = parseInt(value);
+  character.overrides[stat] = isNaN(numValue) ? null : numValue;
+  
+  autosave();
+  calculateDerivedStats();
+  createSpecialFields();
+}
+
 function createSpecialFields() {
   const section = document.getElementById("special-section");
+  const editMode = localStorage.getItem("combatEditMode") === "true";
   
-  const headerHtml = character.specialLocked 
-    ? `<h2>S.P.E.C.I.A.L <button id="edit-special-btn" class="edit-special">Edit</button></h2>`
-    : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${character.specialPointsRemaining}</span></h2>`;
+  const headerHtml = editMode
+    ? `<h2>S.P.E.C.I.A.L <span class="edit-mode-indicator">(Edit Mode Active)</span></h2>`
+    : character.specialLocked 
+      ? `<h2>S.P.E.C.I.A.L <button id="edit-special-btn" class="edit-special">Edit</button></h2>`
+      : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${character.specialPointsRemaining}</span></h2>`;
   
   section.innerHTML = headerHtml;
 
   const stats = Object.keys(character.special);
+  const o = character.overrides || {};
 
   const row = document.createElement("div");
   row.className = "special-row";
@@ -272,17 +374,28 @@ function createSpecialFields() {
     const cell = document.createElement("div");
     cell.className = "special-cell";
     
-    if (character.specialLocked) {
-      // Display as non-editable span when locked
+    const baseValue = character.special[stat];
+    const overrideValue = o[stat] !== null && o[stat] !== undefined ? o[stat] : baseValue;
+    
+    if (editMode) {
+      // Edit mode: show override input with base value
       cell.innerHTML = `
         <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
-        <span class="special-value">${character.special[stat]}</span>
+        <input class="special-override" type="number" min="1" max="20" value="${overrideValue}" 
+          onchange="updateSpecialOverride('${stat}', this.value)">
+        <span class="special-base-value">(Base: ${baseValue})</span>
+      `;
+    } else if (character.specialLocked) {
+      const displayValue = overrideValue;
+      cell.innerHTML = `
+        <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
+        <span class="special-value">${displayValue}</span>
+        ${overrideValue !== baseValue ? `<span class="special-override-indicator">*</span>` : ''}
       `;
     } else {
-      // Display as editable input when unlocked
       cell.innerHTML = `
         <label class="special-label">${stat.charAt(0).toUpperCase() + stat.slice(1)}</label>
-        <input class="special-input" type="number" min="4" max="10" value="${character.special[stat]}"
+        <input class="special-input" type="number" min="4" max="10" value="${baseValue}"
           onchange="updateSpecial('${stat}', this.value)">
       `;
     }
@@ -293,7 +406,7 @@ function createSpecialFields() {
   section.appendChild(row);
 
   // Attach edit button listener if locked
-  if (character.specialLocked) {
+  if (character.specialLocked && !editMode) {
     const editBtn = section.querySelector('#edit-special-btn');
     if (editBtn) {
       editBtn.addEventListener('click', unlockSpecial);
@@ -410,6 +523,34 @@ function createBodyPartsSection() {
 
   const d = character.derived;
   const bp = character.bodyParts;
+  const o = character.overrides || {};
+
+  const s = {
+    strength: getEffectiveSpecial('strength'),
+    perception: getEffectiveSpecial('perception'),
+    endurance: getEffectiveSpecial('endurance'),
+    charisma: getEffectiveSpecial('charisma'),
+    intelligence: getEffectiveSpecial('intelligence'),
+    agility: getEffectiveSpecial('agility'),
+    luck: getEffectiveSpecial('luck')
+  };
+
+  const editMode = localStorage.getItem("combatEditMode") === "true";
+
+  // Calculate base values
+  const baseInitiative = s.perception + s.agility;
+  const baseDefense = s.agility;
+  let baseMeleeDamage;
+  if (s.strength >= 11) baseMeleeDamage = 3;
+  else if (s.strength >= 9) baseMeleeDamage = 2;
+  else if (s.strength >= 7) baseMeleeDamage = 1;
+  else baseMeleeDamage = 0;
+  const baseMaxHP = s.endurance + s.luck + getPerkBonus("Life Giver", "maxHP");
+
+  const initiativeValue = o.initiative !== null && o.initiative !== undefined ? o.initiative : baseInitiative;
+  const defenseValue = o.defense !== null && o.defense !== undefined ? o.defense : baseDefense;
+  const meleeDamageValue = o.meleeDamage !== null && o.meleeDamage !== undefined ? o.meleeDamage : baseMeleeDamage;
+  const maxHPValue = o.maxHP !== null && o.maxHP !== undefined ? o.maxHP : baseMaxHP;
 
   section.innerHTML = `
     <h2>Combat Stats & Body Parts</h2>
@@ -417,15 +558,24 @@ function createBodyPartsSection() {
     <div class="combat-stats-row">
       <div class="stat-field">
         <label>Initiative</label>
-        <span>${d.initiative}</span>
+        ${editMode ? `
+          <input type="number" class="combat-override" value="${initiativeValue}" onchange="updateCombatOverride('initiative', this.value)">
+          <span class="base-value">(Base: ${baseInitiative})</span>
+        ` : `<span>${initiativeValue}</span>`}
       </div>
       <div class="stat-field">
         <label>Defense</label>
-        <span>${d.defense}</span>
+        ${editMode ? `
+          <input type="number" class="combat-override" value="${defenseValue}" onchange="updateCombatOverride('defense', this.value)">
+          <span class="base-value">(Base: ${baseDefense})</span>
+        ` : `<span>${defenseValue}</span>`}
       </div>
       <div class="stat-field">
         <label>Melee Damage</label>
-        <span>+${d.meleeDamage}</span>
+        ${editMode ? `
+          <input type="number" class="combat-override" value="${meleeDamageValue}" onchange="updateCombatOverride('meleeDamage', this.value)">
+          <span class="base-value">(Base: +${baseMeleeDamage})</span>
+        ` : `<span>+${meleeDamageValue}</span>`}
       </div>
     </div>
 
@@ -441,7 +591,12 @@ function createBodyPartsSection() {
         <div class="health-stats">
           <div class="stat-row">
             <label>Maximum HP</label>
-            <span>${d.maxHP}</span>
+            ${editMode ? `
+              <div class="hp-override-group">
+                <input type="number" class="hp-override" value="${maxHPValue}" onchange="updateCombatOverride('maxHP', this.value)">
+                <span class="base-value">(Base: ${baseMaxHP})</span>
+              </div>
+            ` : `<span>${maxHPValue}</span>`}
           </div>
           <div class="stat-row">
             <label>Current HP</label>
@@ -996,15 +1151,41 @@ function escapeHtml(str) {
 
 function createHeader() {
   const header = document.getElementById("header");
+  const editMode = localStorage.getItem("combatEditMode") === "true";
+  
   header.innerHTML = `
     <h1>Fallout Character Creator</h1>
     <div class="header-buttons">
       <button id="save-btn">Save Character</button>
       <button id="load-btn">Load Character</button>
       <input type="file" id="load-file" accept=".json" style="display: none;">
+      <button id="edit-stats-btn">${editMode ? 'Lock Stats' : 'Edit Stats'}</button>
       <button id="reset-btn">Reset Character</button>
     </div>
   `;
+
+  // Attach event listeners immediately after creating elements
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
+
+  const resetBtn = document.getElementById("reset-btn");
+  if (resetBtn) resetBtn.addEventListener("click", resetCharacter);
+  
+  const editStatsBtn = document.getElementById("edit-stats-btn");
+  if (editStatsBtn) editStatsBtn.addEventListener("click", toggleCombatEditMode);
+
+  const loadBtn = document.getElementById("load-btn");
+  if (loadBtn) loadBtn.addEventListener("click", () => {
+    const loadFileInput = document.getElementById("load-file");
+    if (loadFileInput) loadFileInput.click();
+  });
+
+  const loadFileInput = document.getElementById("load-file");
+  if (loadFileInput) {
+    loadFileInput.addEventListener("change", (event) => {
+      if (event.target.files[0]) loadCharacter(event.target.files[0]);
+    });
+  }
 }
 
 function rebuildUIFromCharacter() {
@@ -1030,24 +1211,6 @@ window.onload = () => {
   }
 
   rebuildUIFromCharacter();
-
-  // Attach button listeners after UI is built
-  const saveBtn = document.getElementById("save-btn");
-  if (saveBtn) saveBtn.addEventListener("click", saveCharacter);
-
-  const resetBtn = document.getElementById("reset-btn");
-  if (resetBtn) resetBtn.addEventListener("click", resetCharacter);
-
-  const loadBtn = document.getElementById("load-btn");
-  if (loadBtn) loadBtn.addEventListener("click", () => {
-    const loadFileInput = document.getElementById("load-file");
-    if (loadFileInput) loadFileInput.click();
-  });
-
-  const loadFileInput = document.getElementById("load-file");
-  if (loadFileInput) {
-    loadFileInput.addEventListener("change", (event) => {
-      if (event.target.files[0]) loadCharacter(event.target.files[0]);
-    });
-  }
+  
+  // Event listeners are now attached in createHeader()
 };

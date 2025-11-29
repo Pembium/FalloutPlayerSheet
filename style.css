@@ -481,6 +481,70 @@ button:hover {
   background: #555;
 }
 
+/* Header styling */
+#header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#header h1 {
+  margin: 0 0 16px 0;
+  color: #ffd700;
+}
+
+.header-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-buttons button {
+  padding: 10px 20px;
+  font-size: 1em;
+  font-weight: 600;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#save-btn {
+  background: #2e7d32;
+  color: #eaeaea;
+}
+
+#save-btn:hover {
+  background: #388e3c;
+}
+
+#load-btn {
+  background: #1976d2;
+  color: #eaeaea;
+}
+
+#load-btn:hover {
+  background: #2196f3;
+}
+
+#edit-stats-btn {
+  background: #f57c00;
+  color: #eaeaea;
+}
+
+#edit-stats-btn:hover {
+  background: #fb8c00;
+}
+
+#reset-btn {
+  background: #c62828;
+  color: #eaeaea;
+}
+
+#reset-btn:hover {
+  background: #d32f2f;
+}
+
 /* Misc */
 h2 {
   border-bottom: 1px solid #444;
@@ -828,4 +892,98 @@ h2 {
   .health-card {
     grid-column: span 1;
   }
+}
+
+.edit-mode-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #f57c00;
+  color: #eaeaea;
+  border: 1px solid #ef6c00;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.edit-mode-btn:hover {
+  background: #fb8c00;
+}
+
+.combat-override,
+.hp-override {
+  width: 70px;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+  text-align: center;
+  font-weight: 600;
+}
+
+.base-value {
+  display: block;
+  font-size: 0.75em;
+  color: #888;
+  margin-top: 2px;
+  font-weight: normal;
+}
+
+.hp-override-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.special-override {
+  width: 56px;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 4px;
+  border: 1px solid #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 1.4em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.special-override:focus {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  outline: none;
+}
+
+.special-base-value {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7em;
+  color: #888;
+  font-weight: normal;
+  z-index: 3;
+  white-space: nowrap;
+}
+
+.special-override-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #ffd700;
+  font-size: 1.2em;
+  z-index: 3;
+}
+
+.edit-mode-indicator {
+  font-size: 0.75em;
+  color: #ffd700;
+  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
 }
