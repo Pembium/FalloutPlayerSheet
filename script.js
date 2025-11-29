@@ -127,8 +127,9 @@ function calculateDerivedStats() {
   };
   const o = character.overrides || {};
 
-  // Base HP calculation
-  const calcMaxHP = s.endurance + s.luck + getPerkBonus("Life Giver", "maxHP");
+  // Base HP calculation: Endurance + Luck + (Level - 1) + Perk bonuses
+  const levelBonus = Math.max(0, character.level - 1);
+  const calcMaxHP = s.endurance + s.luck + levelBonus + getPerkBonus("Life Giver", "maxHP");
   character.derived.maxHP = o.maxHP !== null && o.maxHP !== undefined ? o.maxHP : calcMaxHP;
   
   if (character.derived.currentHP > character.derived.maxHP) {
@@ -241,6 +242,7 @@ function updatePlayerInfo(field, value) {
     character[field] = value;
   }
   autosave();
+  calculateDerivedStats(); // Add this line to recalculate HP when level changes
   updateDerivedSection();
   createPerksSection(); // Re-render perks to update requirements
 }
@@ -553,7 +555,8 @@ function createBodyPartsSection() {
   else if (s.strength >= 9) baseMeleeDamage = 2;
   else if (s.strength >= 7) baseMeleeDamage = 1;
   else baseMeleeDamage = 0;
-  const baseMaxHP = s.endurance + s.luck + getPerkBonus("Life Giver", "maxHP");
+  const levelBonus = Math.max(0, character.level - 1);
+  const baseMaxHP = s.endurance + s.luck + levelBonus + getPerkBonus("Life Giver", "maxHP");
 
   const initiativeValue = o.initiative !== null && o.initiative !== undefined ? o.initiative : baseInitiative;
   const defenseValue = o.defense !== null && o.defense !== undefined ? o.defense : baseDefense;
