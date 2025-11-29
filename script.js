@@ -18,7 +18,7 @@ const defaultCharacter = () => ({
      luck: 5
   },
 
-  specialPointsRemaining: 10,
+  specialPointsRemaining: 5, // Changed from 10 to 5
   specialLocked: false,
 
   // Add overrides object
@@ -1089,6 +1089,7 @@ function createInventorySection() {
           <th>Quantity</th>
           <th>Unit Weight</th>
           <th>Total Weight</th>
+          <th>Reference</th>
           <th></th>
         </tr>
       </thead>
@@ -1105,6 +1106,7 @@ function createInventorySection() {
     const quantity = item.quantity || 0;
     const unitWeight = item.weight || 0;
     const totalWeight = quantity * unitWeight;
+    const reference = item.reference || "";
     
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -1112,6 +1114,7 @@ function createInventorySection() {
       <td><input type="number" class="inventory-quantity" min="0" value="${quantity}" onchange="updateInventoryItem(${idx}, 'quantity', this.value)"></td>
       <td><input type="number" class="inventory-weight" min="0" step="0.1" value="${unitWeight}" onchange="updateInventoryItem(${idx}, 'weight', this.value)"></td>
       <td><span class="total-weight">${totalWeight.toFixed(1)}</span></td>
+      <td><input type="text" class="inventory-reference" value="${escapeHtml(reference)}" onchange="updateInventoryItem(${idx}, 'reference', this.value)"></td>
       <td><button onclick="removeInventoryItem(${idx})">Remove</button></td>
     `;
     tbody.appendChild(tr);
@@ -1123,7 +1126,8 @@ function addInventoryItem() {
   character.inventory.push({
     name: "",
     quantity: 1,
-    weight: 0
+    weight: 0,
+    reference: ""
   });
   autosave();
   createInventorySection();
