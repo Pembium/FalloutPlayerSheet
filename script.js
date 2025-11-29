@@ -1,20 +1,453 @@
+const PERK_DATABASE = {
+  "Action Boy/Action Girl": {
+    ranks: 2,
+    requirements: { special: { agility: 8 }, level: 1 },
+    levelIncrement: 5,
+    description: "Rank 1: Maximum AP increases by +1. Rank 2: Maximum AP increases by +2."
+  },
+  "Adamantium Skeleton": {
+    ranks: 1,
+    requirements: { level: 7 },
+    description: "You cannot suffer limb injuries."
+  },
+  "Animal Friend": {
+    ranks: 2,
+    requirements: { special: { charisma: 6 }, level: 3 },
+    levelIncrement: 4,
+    description: "Rank 1: Wasteland creatures are less likely to attack. Rank 2: Wasteland creatures will not attack unless provoked."
+  },
+  "Aquaboy/Aquagirl": {
+    ranks: 1,
+    requirements: { special: { endurance: 5 } },
+    description: "You do not take radiation damage from swimming and can breathe underwater."
+  },
+  "Armorer": {
+    ranks: 3,
+    requirements: { special: { strength: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Ranks unlock armor crafting mods: rank 1 = rank 1 mods, rank 2 = rank 2 mods, rank 3 = rank 3 mods."
+  },
+  "Awareness": {
+    ranks: 1,
+    requirements: { special: { perception: 6 } },
+    description: "You can see an enemy's physical and energy DR."
+  },
+  "Basher": {
+    ranks: 2,
+    requirements: { special: { strength: 6 }, level: 1 },
+    levelIncrement: 5,
+    description: "Rank 1: Gun bashing does +1CDC damage. Rank 2: Gun bashing has a chance to cripple your opponent."
+  },
+  "Better Criticals": {
+    ranks: 2,
+    requirements: { special: { luck: 9 }, level: 4 },
+    levelIncrement: 5,
+    description: "Rank 1: Injuries inflicted by your attacks are 1 step more severe. Rank 2: Injuries inflicted by your attacks are 2 steps more severe."
+  },
+  "Big Leagues": {
+    ranks: 2,
+    requirements: { special: { strength: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Rank 1: Melee weapon attacks do +1CDC damage. Rank 2: Melee weapon attacks do +2CDC damage and gain Piercing 1."
+  },
+  "Blacksmith": {
+    ranks: 3,
+    requirements: { special: { strength: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Ranks unlock melee weapon mods: rank 1 = rank 1 mods, rank 2 = rank 2 mods, rank 3 = rank 3 mods."
+  },
+  "Bloody Mess": {
+    ranks: 3,
+    requirements: { level: 3 },
+    levelIncrement: 5,
+    description: "Rank 1: All damage +1CDC. Rank 2: All damage +2CDC. Rank 3: All damage +3CDC."
+  },
+  "Chem Resistant": {
+    ranks: 2,
+    requirements: { special: { endurance: 6 }, level: 1 },
+    levelIncrement: 5,
+    description: "Rank 1: You're 50% less likely to get addicted. Rank 2: You cannot become addicted to chems."
+  },
+  "Chemist": {
+    ranks: 1,
+    requirements: { special: { intelligence: 7 } },
+    description: "Chems you take last twice as long."
+  },
+  "Commando": {
+    ranks: 2,
+    requirements: { special: { agility: 7 }, level: 2 },
+    levelIncrement: 4,
+    description: "Rank 1: Automatic weapons +1CDC damage. Rank 2: Automatic weapons +2CDC damage and Piercing 1."
+  },
+  "Concentrated Fire": {
+    ranks: 1,
+    requirements: { special: { perception: 8 } },
+    description: "Each additional attack against the same target in a turn reduces difficulty by 1."
+  },
+  "Critical Banker": {
+    ranks: 1,
+    requirements: { special: { luck: 7 } },
+    description: "You can save unused Luck points between sessions."
+  },
+  "Demolition Expert": {
+    ranks: 3,
+    requirements: { special: { perception: 5 }, level: 3 },
+    levelIncrement: 5,
+    description: "Explosive damage +1CDC per rank. Rank 3: Explosives have double the normal Burst radius."
+  },
+  "Fortune Finder": {
+    ranks: 3,
+    requirements: { special: { luck: 6 }, level: 1 },
+    levelIncrement: 5,
+    description: "Rank 1: +3CDC caps found. Rank 2: +6CDC caps found. Rank 3: +10CDC caps found."
+  },
+  "Four Leaf Clover": {
+    ranks: 3,
+    requirements: { special: { luck: 8 }, level: 3 },
+    levelIncrement: 5,
+    description: "Rank 1: Regain 1 Luck on 19-20. Rank 2: Regain 1 Luck on 18-20. Rank 3: Regain 1 Luck on 17-20."
+  },
+  "Ghoulish": {
+    ranks: 3,
+    requirements: { special: { endurance: 8 }, level: 4 },
+    levelIncrement: 5,
+    description: "Radiation heals you instead of harming. Rank 1: 1 HP per 10 rads. Rank 2: 1 HP per 5 rads. Rank 3: 1 HP per rad."
+  },
+  "Grim Reaper's Sprint": {
+    ranks: 1,
+    requirements: { special: { luck: 8 } },
+    description: "Killing an enemy restores all your AP."
+  },
+  "Gun Nut": {
+    ranks: 3,
+    requirements: { special: { intelligence: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Ranks unlock gun mods: rank 1 = rank 1 mods, rank 2 = rank 2 mods, rank 3 = rank 3 mods."
+  },
+  "Gunslinger": {
+    ranks: 2,
+    requirements: { special: { agility: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Rank 1: One-handed guns +1CDC damage. Rank 2: One-handed guns +2CDC damage and Piercing 1."
+  },
+  "Heavy Gunner": {
+    ranks: 3,
+    requirements: { special: { strength: 8 }, level: 2 },
+    levelIncrement: 4,
+    description: "Heavy guns +1CDC damage per rank."
+  },
+  "Idiot Savant": {
+    ranks: 2,
+    requirements: { special: { intelligence: 4, luck: 6 }, level: 2 },
+    levelIncrement: 5,
+    description: "Rank 1: Random bonus XP on skill tests. Rank 2: Increased chance of bonus XP."
+  },
+  "Inspirational": {
+    ranks: 1,
+    requirements: { special: { charisma: 8 } },
+    description: "Maximum group AP +1."
+  },
+  "Intense Training": {
+    ranks: 10,
+    requirements: { level: 2 },
+    levelIncrement: 2,
+    description: "Increase one SPECIAL attribute by 1 (max 10).",
+    modifiesSpecial: true
+  },
+  "Iron Fist": {
+    ranks: 2,
+    requirements: { special: { strength: 6 }, level: 1 },
+    levelIncrement: 5,
+    description: "Rank 1: Unarmed +1CDC damage. Rank 2: Unarmed attacks gain Vicious."
+  },
+  "Junktown Jerky Vendor": {
+    ranks: 1,
+    requirements: { special: { charisma: 8 } },
+    description: "Barter tests to buy/sell: difficulty -1 (minimum 0)."
+  },
+  "Jury Rigging": {
+    ranks: 1,
+    requirements: {},
+    description: "Repair items without components (temporary, breaks on complication, complication range 19-20)."
+  },
+  "Laser Commander": {
+    ranks: 2,
+    requirements: { special: { perception: 8 }, level: 2 },
+    levelIncrement: 4,
+    description: "Energy weapons +1CDC damage per rank."
+  },
+  "Lead Belly": {
+    ranks: 2,
+    requirements: { special: { endurance: 6 }, level: 1 },
+    levelIncrement: 4,
+    description: "Rank 1: Re-roll radiation DC from food/drink. Rank 2: Immune to radiation from food/drink."
+  },
+  "Life Giver": {
+    ranks: 5,
+    requirements: { level: 5 },
+    levelIncrement: 5,
+    description: "Maximum HP +END per rank.",
+    modifiesHP: true
+  },
+  "Light Step": {
+    ranks: 1,
+    requirements: {},
+    description: "Ignore 1 complication per AP spent on AGI tests. Re-roll 1d20 to avoid pressure plate traps."
+  },
+  "Master Thief": {
+    ranks: 1,
+    requirements: { special: { perception: 8, agility: 9 } },
+    description: "Lockpick/pickpocket detection difficulty +1."
+  },
+  "Medic": {
+    ranks: 1,
+    requirements: { special: { intelligence: 8 } },
+    description: "First Aid: re-roll 1d20."
+  },
+  "Meltdown": {
+    ranks: 1,
+    requirements: { special: { perception: 10 } },
+    description: "Enemies killed with energy weapons explode, damaging nearby enemies."
+  },
+  "Mister Sandman": {
+    ranks: 1,
+    requirements: { special: { agility: 9 } },
+    description: "Sneak attacks with silenced weapons +2CDC damage (not in Power Armor)."
+  },
+  "Moving Target": {
+    ranks: 1,
+    requirements: { special: { agility: 6 } },
+    description: "Sprint action: Defense +1 until next turn."
+  },
+  "Mysterious Stranger": {
+    ranks: 1,
+    requirements: { special: { luck: 7 } },
+    description: "Spend 1 Luck: Mysterious Stranger may appear and attack an enemy."
+  },
+  "Nerd Rage!": {
+    ranks: 3,
+    requirements: { special: { intelligence: 8 }, level: 2 },
+    levelIncrement: 5,
+    description: "At <¼ HP: +physical DR, +energy DR, +CDC damage per rank (1/2/3)."
+  },
+  "Night Person": {
+    ranks: 1,
+    requirements: { special: { perception: 7 } },
+    description: "Darkness difficulty penalties -1."
+  },
+  "Ninja": {
+    ranks: 1,
+    requirements: { special: { agility: 8 } },
+    description: "Melee/unarmed sneak attacks +2CDC damage (not in Power Armor)."
+  },
+  "Nuclear Physicist": {
+    ranks: 1,
+    requirements: { special: { intelligence: 9 } },
+    description: "Radioactive weapons: +1 rad damage per Effect. Fusion cores +3 charges."
+  },
+  "Pain Train": {
+    ranks: 2,
+    requirements: { special: { strength: 9, endurance: 7 }, level: 1 },
+    levelIncrement: 5,
+    description: "Charge in Power Armor (major action). Rank 2: +1CDC damage and Stun effect."
+  },
+  "Paralyzing Palm": {
+    ranks: 1,
+    requirements: { special: { strength: 8 } },
+    description: "Unarmed attacks to specific locations gain Stun effect."
+  },
+  "Party Boy/Party Girl": {
+    ranks: 1,
+    requirements: { special: { endurance: 6, charisma: 7 } },
+    description: "Cannot become addicted to alcohol. Drinking alcohol heals +2 HP."
+  },
+  "Pathfinder": {
+    ranks: 1,
+    requirements: { special: { perception: 6, endurance: 6 } },
+    description: "Successful PER + Survival: wilderness travel time halved."
+  },
+  "Pharma Farma": {
+    ranks: 1,
+    requirements: { special: { luck: 6 } },
+    description: "Find +1 random medicine/chem when scavenging (no AP cost)."
+  },
+  "Pickpocket": {
+    ranks: 3,
+    requirements: { special: { perception: 8, agility: 8 }, level: 1 },
+    levelIncrement: 3,
+    description: "Rank 1: Ignore first complication. Rank 2: Re-roll 1d20. Rank 3: Difficulty -1."
+  },
+  "Piercing Strike": {
+    ranks: 1,
+    requirements: { special: { strength: 7 } },
+    description: "Unarmed/bladed melee: Piercing 1 or +1 to existing Piercing X."
+  },
+  "Pyromaniac": {
+    ranks: 3,
+    requirements: { special: { endurance: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Fire weapons +1CDC damage per rank."
+  },
+  "Quick Draw": {
+    ranks: 1,
+    requirements: { special: { agility: 6 } },
+    description: "Draw 1 weapon/item per turn without minor action."
+  },
+  "Quick Hands": {
+    ranks: 1,
+    requirements: { special: { agility: 8 } },
+    description: "Spend 2 AP: Fire Rate +2 for one attack."
+  },
+  "Rad Resistance": {
+    ranks: 2,
+    requirements: { special: { endurance: 8 }, level: 1 },
+    levelIncrement: 4,
+    description: "Radiation DR +1 per rank (all locations).",
+    modifiesDR: { type: 'rad', amount: 1 }
+  },
+  "Refractor": {
+    ranks: 2,
+    requirements: { special: { perception: 6, luck: 7 }, level: 1 },
+    levelIncrement: 4,
+    description: "Energy DR +1 per rank (all locations).",
+    modifiesDR: { type: 'energy', amount: 1 }
+  },
+  "Ricochet": {
+    ranks: 1,
+    requirements: { special: { luck: 10 }, level: 5 },
+    description: "Enemy ranged attack complication: spend 1 Luck to make it hit them instead."
+  },
+  "Rifleman": {
+    ranks: 2,
+    requirements: { special: { agility: 7 }, level: 2 },
+    levelIncrement: 4,
+    description: "Two-handed guns (Fire Rate ≤2, non-heavy): +1CDC per rank. Rank 2: Piercing 1 or +1 to existing."
+  },
+  "Robotics Expert": {
+    ranks: 3,
+    requirements: { special: { intelligence: 8 }, level: 2 },
+    levelIncrement: 4,
+    description: "Ranks unlock robot mods. Rank 2: robot repair difficulty -1. Rank 3: reprogram robots."
+  },
+  "Science!": {
+    ranks: 3,
+    requirements: { special: { intelligence: 6 }, level: 2 },
+    levelIncrement: 4,
+    description: "Ranks unlock energy weapon/advanced armor mods (rank 1/2/3)."
+  },
+  "Scoundrel": {
+    ranks: 1,
+    requirements: { special: { charisma: 7 } },
+    description: "CHA + Speech to lie: ignore first complication."
+  },
+  "Scrapper": {
+    ranks: 2,
+    requirements: { level: 3 },
+    levelIncrement: 5,
+    description: "Rank 1: Salvage uncommon materials. Rank 2: Salvage rare materials."
+  },
+  "Scrounger": {
+    ranks: 3,
+    requirements: { special: { luck: 6 }, level: 1 },
+    levelIncrement: 5,
+    description: "Find more ammo. Rank 1: +3CDC. Rank 2: +6CDC. Rank 3: +10CDC."
+  },
+  "Shotgun Surgeon": {
+    ranks: 1,
+    requirements: { special: { strength: 5, agility: 7 } },
+    description: "Shotguns: Piercing 1 or +1 to existing Piercing X."
+  },
+  "Skilled": {
+    ranks: 10,
+    requirements: { level: 3 },
+    levelIncrement: 3,
+    description: "Add +1 rank to two skills or +2 to one skill (max 6 ranks).",
+    modifiesSkills: true
+  },
+  "Size Matters": {
+    ranks: 3,
+    requirements: { special: { endurance: 7, agility: 6 } },
+    levelIncrement: 4,
+    description: "Heavy weapons +1CDC damage per rank."
+  },
+  "Slayer": {
+    ranks: 1,
+    requirements: { special: { strength: 8 } },
+    description: "Unarmed/melee damage: spend 1 Luck for immediate critical hit/injury."
+  },
+  "Smooth Talker": {
+    ranks: 1,
+    requirements: { special: { charisma: 6 } },
+    description: "Opposed Barter/Speech tests: re-roll 1d20."
+  },
+  "Snakeater": {
+    ranks: 1,
+    requirements: { special: { endurance: 7 } },
+    description: "Poison DR +2.",
+    modifiesPoisonDR: 2
+  },
+  "Sniper": {
+    ranks: 1,
+    requirements: { special: { perception: 8, agility: 6 } },
+    description: "Aim + two-handed Accurate weapon: target location without difficulty increase."
+  },
+  "Solar Powered": {
+    ranks: 1,
+    requirements: { special: { endurance: 7 } },
+    description: "Heal 1 rad damage per hour in direct sunlight."
+  },
+  "Steady Aim": {
+    ranks: 1,
+    requirements: { special: { strength: 8, agility: 7 } },
+    description: "Aim action: re-roll 2d20 on first attack OR 1d20 on all attacks this turn."
+  },
+  "Strong Back": {
+    ranks: 3,
+    requirements: { special: { strength: 5 }, level: 1 },
+    levelIncrement: 2,
+    description: "Max carry weight +25 lbs per rank.",
+    modifiesCarryWeight: 25
+  },
+  "TAG!": {
+    ranks: 1,
+    requirements: { level: 5 },
+    description: "Select one additional Tag skill (+2 ranks, max 6).",
+    modifiesSkills: true
+  },
+  "Terrifying Presence": {
+    ranks: 2,
+    requirements: { special: { strength: 6, charisma: 8 }, level: 3 },
+    levelIncrement: 5,
+    description: "Rank 1: Speech to threaten: re-roll 1d20. Rank 2: Major action to force enemy to flee."
+  },
+  "Toughness": {
+    ranks: 2,
+    requirements: { special: { endurance: 6, luck: 6 }, level: 1 },
+    levelIncrement: 4,
+    description: "Physical DR +1 per rank (all locations).",
+    modifiesDR: { type: 'physical', amount: 1 }
+  }
+};
+
+// Add character level to defaultCharacter
 const defaultCharacter = () => ({
   name: "",
   origin: "",
   background: "",
   caps: 0,
+  level: 1,
 
   special: {
-     strength: 4,
-     perception: 4,
-     endurance: 4,
-     charisma: 4,
-     intelligence: 4,
-     agility: 4,
-     luck: 4
+     strength: 5,
+     perception: 5,
+     endurance: 5,
+     charisma: 5,
+     intelligence: 5,
+     agility: 5,
+     luck: 5
   },
 
-  specialPointsRemaining: 14,
+  specialPointsRemaining: 10,
   specialLocked: false,
 
   bodyParts: {
@@ -93,7 +526,12 @@ function ensureCharacterShape(ch) {
 function calculateDerivedStats() {
   const s = character.special;
 
+  // Base HP calculation
   character.derived.maxHP = s.endurance + s.luck;
+  
+  // Add Life Giver bonus
+  character.derived.maxHP += getPerkBonus("Life Giver", "maxHP");
+  
   if (character.derived.currentHP > character.derived.maxHP) {
     character.derived.currentHP = character.derived.maxHP;
   }
@@ -116,7 +554,9 @@ function calculateDerivedStats() {
     });
   }
 
+  // Base carry weight + Strong Back bonus
   character.derived.maxCarryWeight = 100 + s.strength * 10;
+  character.derived.maxCarryWeight += getPerkBonus("Strong Back", "carryWeight");
 
   // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
   if (s.strength >= 11) {
@@ -150,6 +590,10 @@ function updateDerivedSection() {
         <input type="text" value="${escapeHtml(character.name)}" onchange="updatePlayerInfo('name', this.value)">
       </div>
       <div class="info-field">
+        <label>Level</label>
+        <input type="number" min="1" value="${character.level}" onchange="updatePlayerInfo('level', this.value)">
+      </div>
+      <div class="info-field">
         <label>Origin</label>
         <input type="text" value="${escapeHtml(character.origin)}" onchange="updatePlayerInfo('origin', this.value)">
       </div>
@@ -179,13 +623,14 @@ function updateDerivedSection() {
 }
 
 function updatePlayerInfo(field, value) {
-  if (field === "caps") {
-    character.caps = parseInt(value) || 0;
+  if (field === "caps" || field === "level") {
+    character[field] = parseInt(value) || (field === "level" ? 1 : 0);
   } else {
     character[field] = value;
   }
   autosave();
   updateDerivedSection();
+  createPerksSection(); // Re-render perks to update requirements
 }
 
 function updateDerivedValue(field, value) {
@@ -521,125 +966,364 @@ function isPerkEmpty(perk) {
   return !perk.name && Number(perk.rank) === 0 && !perk.effect;
 }
 
+function checkPerkRequirements(perkName, currentRank = 0) {
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return { canTake: false, reasons: ["Perk not found"] };
+  
+  const reasons = [];
+  
+  // Check if already at max rank
+  if (currentRank >= perk.ranks) {
+    return { canTake: false, reasons: ["Already at maximum rank"] };
+  }
+  
+  // Check level requirement
+  const reqLevel = (perk.requirements.level || 1) + (currentRank * (perk.levelIncrement || 0));
+  if (character.level < reqLevel) {
+    reasons.push(`Requires level ${reqLevel}`);
+  }
+  
+  // Check SPECIAL requirements
+  if (perk.requirements.special) {
+    for (const [stat, value] of Object.entries(perk.requirements.special)) {
+      if (character.special[stat] < value) {
+        reasons.push(`Requires ${stat.toUpperCase()} ${value}`);
+      }
+    }
+  }
+  
+  return {
+    canTake: reasons.length === 0,
+    reasons: reasons
+  };
+}
+
+function applyPerkEffects(perkName, rank) {
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return;
+  
+  // Apply Strong Back carry weight bonus
+  if (perk.modifiesCarryWeight) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Apply DR bonuses
+  if (perk.modifiesDR) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Apply poison DR bonus
+  if (perk.modifiesPoisonDR) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Life Giver HP bonus
+  if (perk.modifiesHP) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Re-calculate derived stats to apply perk effects
+  calculateDerivedStats();
+}
+
+function getPerkBonus(perkName, field) {
+  const perkEntry = character.perks.find(p => p.name === perkName);
+  if (!perkEntry || !perkEntry.rank) return 0;
+  
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return 0;
+  
+  switch(field) {
+    case 'carryWeight':
+      return perk.modifiesCarryWeight ? perk.modifiesCarryWeight * perkEntry.rank : 0;
+    case 'physicalDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'physical') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'energyDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'energy') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'radDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'rad') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'poisonDR':
+      return perk.modifiesPoisonDR ? perk.modifiesPoisonDR : 0;
+    case 'maxHP':
+      if (perk.modifiesHP) {
+        return character.special.endurance * perkEntry.rank;
+      }
+      return 0;
+    default:
+      return 0;
+  }
+}
+
 function createPerksSection() {
   const section = document.getElementById("perks-section");
   
   if (!section) return;
   
   section.innerHTML = `
-    <h2>Perks & Traits <button id="add-perk-btn" class="add-perk">+</button></h2>
+    <h2>Perks & Traits</h2>
+    <div class="perks-controls">
+      <label for="perk-select">Add Perk:</label>
+      <select id="perk-select">
+        <option value="">-- Select a Perk --</option>
+        ${Object.keys(PERK_DATABASE).sort().map(name => `<option value="${name}">${name}</option>`).join('')}
+      </select>
+      <button id="add-perk-btn" class="add-perk">Add</button>
+      <div id="perk-info" class="perk-info"></div>
+    </div>
     <table id="perks-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Rank</th>
-          <th>Effect</th>
+          <th style="width:25%;">Name</th>
+          <th style="width:8%;">Rank</th>
+          <th style="width:50%;">Description</th>
+          <th style="width:17%;">Status</th>
         </tr>
       </thead>
       <tbody id="perks-tbody"></tbody>
     </table>
   `;
 
+  const perkSelect = section.querySelector('#perk-select');
+  const perkInfo = section.querySelector('#perk-info');
   const addBtn = section.querySelector('#add-perk-btn');
+  
+  if (perkSelect) {
+    perkSelect.addEventListener('change', (e) => {
+      const perkName = e.target.value;
+      if (perkName && PERK_DATABASE[perkName]) {
+        const perk = PERK_DATABASE[perkName];
+        const existing = character.perks.find(p => p.name === perkName);
+        const currentRank = existing ? existing.rank : 0;
+        const check = checkPerkRequirements(perkName, currentRank);
+        
+        let reqText = "Requirements: ";
+        const reqs = [];
+        if (perk.requirements.level) reqs.push(`Level ${perk.requirements.level + (currentRank * (perk.levelIncrement || 0))}`);
+        if (perk.requirements.special) {
+          for (const [stat, val] of Object.entries(perk.requirements.special)) {
+            reqs.push(`${stat.toUpperCase()} ${val}`);
+          }
+        }
+        if (reqs.length === 0) reqs.push("None");
+        reqText += reqs.join(", ");
+        
+        const statusHtml = check.canTake 
+          ? '<span class="valid">✓ Can take</span>' 
+          : `<span class="invalid">✗ ${escapeHtml(check.reasons.join(", "))}</span>`;
+        
+        perkInfo.innerHTML = `
+          <strong>${escapeHtml(perkName)}</strong> (Max Rank: ${perk.ranks})<br>
+          ${escapeHtml(reqText)}<br>
+          ${escapeHtml(perk.description)}<br>
+          ${statusHtml}
+        `;
+      } else {
+        perkInfo.innerHTML = '';
+      }
+    });
+  }
+  
   if (addBtn) {
-    addBtn.removeEventListener('click', addPerk);
-    addBtn.addEventListener('click', addPerk);
+    addBtn.addEventListener('click', () => {
+      const perkName = perkSelect.value;
+      if (!perkName) return;
+      
+      const existing = character.perks.find(p => p.name === perkName);
+      const currentRank = existing ? existing.rank : 0;
+      const check = checkPerkRequirements(perkName, currentRank);
+      
+      if (!check.canTake) {
+        alert(`Cannot take this perk:\n${check.reasons.join("\n")}`);
+        return;
+      }
+      
+      if (existing) {
+        existing.rank += 1;
+      } else {
+        character.perks.push({
+          name: perkName,
+          rank: 1,
+          effect: PERK_DATABASE[perkName].description
+        });
+      }
+      
+      applyPerkEffects(perkName, existing ? existing.rank : 1);
+      autosave();
+      createPerksSection();
+      perkSelect.value = '';
+      perkInfo.innerHTML = '';
+    });
   }
 
   if (!Array.isArray(character.perks)) character.perks = [];
-
-  if (character.perks.length === 0) {
-    character.perks.push(defaultPerk());
-  }
 
   const tbody = section.querySelector("#perks-tbody");
   tbody.innerHTML = "";
 
   character.perks.forEach((perk, idx) => {
+    const perkData = PERK_DATABASE[perk.name];
+    const check = checkPerkRequirements(perk.name, perk.rank);
+    const canIncrease = perkData && check.canTake;
+    const canDecrease = perk.rank > 0;
+    
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input class="perk-name" type="text" value="${escapeHtml(perk.name || "")}" onchange="updatePerk(${idx}, 'name', this.value)"></td>
-      <td><input class="perk-rank" type="number" min="0" value="${perk.rank || 0}" onchange="updatePerk(${idx}, 'rank', this.value)"></td>
-      <td><textarea class="perk-effect" onchange="updatePerk(${idx}, 'effect', this.value)">${escapeHtml(perk.effect || "")}</textarea></td>
+      <td><strong>${escapeHtml(perk.name || "")}</strong></td>
+      <td class="perk-rank-cell">
+        <button class="rank-btn" onclick="adjustPerkRank(${idx}, -1)" ${!canDecrease ? 'disabled' : ''}>-</button>
+        <span class="rank-display">${perk.rank}/${perkData ? perkData.ranks : '?'}</span>
+        <button class="rank-btn" onclick="adjustPerkRank(${idx}, 1)" ${!canIncrease ? 'disabled' : ''}>+</button>
+      </td>
+      <td class="perk-description">${escapeHtml(perk.effect || "")}</td>
+      <td class="perk-status">
+        ${check.canTake ? '<span class="valid">✓ Valid</span>' : `<span class="invalid">✗ ${check.reasons[0]}</span>`}
+        <button class="remove-btn" onclick="removePerk(${idx})">Remove</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function addPerk() {
-  if (!Array.isArray(character.perks)) character.perks = [];
-  character.perks.push(defaultPerk());
-  autosave();
-  createPerksSection();
-}
-
-function updatePerk(index, field, value) {
-  if (!Array.isArray(character.perks)) character.perks = [];
+function adjustPerkRank(index, delta) {
   if (!character.perks[index]) return;
-
-  if (field === "rank") {
-    character.perks[index][field] = parseInt(value) || 0;
-  } else {
-    character.perks[index][field] = value;
+  
+  const perk = character.perks[index];
+  const newRank = perk.rank + delta;
+  
+  if (newRank <= 0) {
+    removePerk(index);
+    return;
   }
-
-  if (isPerkEmpty(character.perks[index])) {
-    character.perks.splice(index, 1);
+  
+  const check = checkPerkRequirements(perk.name, perk.rank);
+  if (delta > 0 && !check.canTake) {
+    alert(`Cannot increase rank:\n${check.reasons.join("\n")}`);
+    return;
   }
-
+  
+  perk.rank = newRank;
+  applyPerkEffects(perk.name, newRank);
   autosave();
   createPerksSection();
 }
 
-function defaultInventoryItem() {
-  return { item: "", quantity: 0, weight: 0 };
+function removePerk(index) {
+  if (!character.perks[index]) return;
+  character.perks.splice(index, 1);
+  autosave();
+  calculateDerivedStats();
+  createPerksSection();
 }
 
-function isInventoryItemEmpty(inv) {
-  if (!inv) return true;
-  return !inv.item && Number(inv.quantity) === 0 && Number(inv.weight) === 0;
+function createWeaponsSection() {
+  const section = document.getElementById("weapons-section");
+  if (!section) return;
+
+  section.innerHTML = `
+    <h2>Weapons <button class="add-weapon" onclick="addWeapon()">+ Add Weapon</button></h2>
+    <table id="weapons-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Damage</th>
+          <th>Range</th>
+          <th>Weight</th>
+          <th>Qualities</th>
+          <th>Ammo</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="weapons-tbody"></tbody>
+    </table>
+  `;
+
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+
+  const tbody = section.querySelector("#weapons-tbody");
+  tbody.innerHTML = "";
+
+  character.weapons.forEach((weapon, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" value="${escapeHtml(weapon.name || "")}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
+      <td><input type="text" class="weapon-small" value="${escapeHtml(weapon.damage || "")}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
+      <td><input type="text" class="weapon-small" value="${escapeHtml(weapon.range || "")}" onchange="updateWeapon(${idx}, 'range', this.value)"></td>
+      <td><input type="number" class="weapon-small" min="0" value="${weapon.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
+      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'qualities', this.value)">${escapeHtml(weapon.qualities || "")}</textarea></td>
+      <td><input type="text" class="weapon-small" value="${escapeHtml(weapon.ammo || "")}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
+      <td><button onclick="removeWeapon(${idx})">Remove</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addWeapon() {
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+  character.weapons.push({
+    name: "",
+    damage: "",
+    range: "",
+    weight: 0,
+    qualities: "",
+    ammo: ""
+  });
+  autosave();
+  createWeaponsSection();
+  calculateDerivedStats();
+}
+
+function updateWeapon(index, field, value) {
+  if (!character.weapons[index]) return;
+  
+  if (field === 'weight') {
+    character.weapons[index][field] = parseFloat(value) || 0;
+  } else {
+    character.weapons[index][field] = value;
+  }
+  
+  autosave();
+  calculateDerivedStats();
+}
+
+function removeWeapon(index) {
+  if (!character.weapons[index]) return;
+  character.weapons.splice(index, 1);
+  autosave();
+  createWeaponsSection();
+  calculateDerivedStats();
 }
 
 function createInventorySection() {
   const section = document.getElementById("other-section");
-  
   if (!section) return;
-  
+
   section.innerHTML = `
-    <h2>Inventory <button id="add-inventory-btn" class="add-inventory">+</button></h2>
+    <h2>Inventory <button class="add-inventory" onclick="addInventoryItem()">+ Add Item</button></h2>
     <table id="inventory-table">
       <thead>
         <tr>
-          <th>Item</th>
+          <th>Item Name</th>
           <th>Quantity</th>
           <th>Weight</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="inventory-tbody"></tbody>
     </table>
   `;
 
-  const addBtn = section.querySelector('#add-inventory-btn');
-  if (addBtn) {
-    addBtn.removeEventListener('click', addInventoryItem);
-    addBtn.addEventListener('click', addInventoryItem);
-  }
-
   if (!Array.isArray(character.inventory)) character.inventory = [];
-
-  if (character.inventory.length === 0) {
-    character.inventory.push(defaultInventoryItem());
-  }
 
   const tbody = section.querySelector("#inventory-tbody");
   tbody.innerHTML = "";
 
-  character.inventory.forEach((inv, idx) => {
+  character.inventory.forEach((item, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input class="inventory-item" type="text" value="${escapeHtml(inv.item || "")}" onchange="updateInventory(${idx}, 'item', this.value)"></td>
-      <td><input class="inventory-quantity" type="number" min="0" value="${inv.quantity || 0}" onchange="updateInventory(${idx}, 'quantity', this.value)"></td>
-      <td><input class="inventory-weight" type="number" step="0.1" min="0" value="${inv.weight || 0}" onchange="updateInventory(${idx}, 'weight', this.value)"></td>
+      <td><input type="text" value="${escapeHtml(item.name || "")}" onchange="updateInventoryItem(${idx}, 'name', this.value)"></td>
+      <td><input type="number" class="inventory-quantity" min="0" value="${item.quantity || 1}" onchange="updateInventoryItem(${idx}, 'quantity', this.value)"></td>
+      <td><input type="number" class="inventory-weight" min="0" step="0.1" value="${item.weight || 0}" onchange="updateInventoryItem(${idx}, 'weight', this.value)"></td>
+      <td><button onclick="removeInventoryItem(${idx})">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -647,171 +1331,39 @@ function createInventorySection() {
 
 function addInventoryItem() {
   if (!Array.isArray(character.inventory)) character.inventory = [];
-  character.inventory.push(defaultInventoryItem());
+  character.inventory.push({
+    name: "",
+    quantity: 1,
+    weight: 0
+  });
   autosave();
-  calculateDerivedStats();
   createInventorySection();
 }
 
-function updateInventory(index, field, value) {
-  if (!Array.isArray(character.inventory)) character.inventory = [];
+function updateInventoryItem(index, field, value) {
   if (!character.inventory[index]) return;
-
-  if (field === "quantity" || field === "weight") {
+  
+  if (field === 'quantity') {
+    character.inventory[index][field] = parseInt(value) || 0;
+  } else if (field === 'weight') {
     character.inventory[index][field] = parseFloat(value) || 0;
   } else {
     character.inventory[index][field] = value;
   }
-
-  if (isInventoryItemEmpty(character.inventory[index])) {
-    character.inventory.splice(index, 1);
-  }
-
+  
   autosave();
   calculateDerivedStats();
+}
+
+function removeInventoryItem(index) {
+  if (!character.inventory[index]) return;
+  character.inventory.splice(index, 1);
+  autosave();
   createInventorySection();
-}
-
-function defaultWeapon() {
-  const firstSkill = Object.keys(character.skills)[0] || "";
-  return {
-    name: "",
-    skill: firstSkill,
-    TN: 0,
-    tag: false,
-    damage: "",
-    effects: "",
-    type: "",
-    rate: "",
-    range: "close",
-    qualities: "",
-    ammo: "",
-    weight: 0
-  };
-}
-
-function isWeaponEmpty(w) {
-  if (!w) return true;
-  return !w.name &&
-         (!w.skill || w.skill === "") &&
-         Number(w.TN) === 0 &&
-         !w.tag &&
-         !w.damage &&
-         !w.effects &&
-         !w.type &&
-         !w.rate &&
-         (!w.range || w.range === "close") &&
-         !w.qualities &&
-         !w.ammo &&
-         Number(w.weight) === 0;
-}
-
-function createWeaponsSection() {
-  const section = document.getElementById("weapons-section");
-  section.innerHTML = `
-    <h2>Weapons <button id="add-weapon-btn" class="add-weapon">+</button></h2>
-    <table id="weapons-table">
-      <thead>
-        <tr>
-          <th style="width:18%;">Name</th>
-          <th style="width:10%;">Skill</th>
-          <th style="width:4%;">TN</th>
-          <th style="width:4%;">TAG</th>
-          <th style="width:8%;">Damage</th>
-          <th style="width:15%;">Effects</th>
-          <th style="width:8%;">Type</th>
-          <th style="width:5%;">Rate</th>
-          <th style="width:6%;">Range</th>
-          <th style="width:10%;">Qualities</th>
-          <th style="width:4%;">AMMO</th>
-          <th style="width:6%;">Weight</th>
-        </tr>
-      </thead>
-      <tbody id="weapons-tbody"></tbody>
-    </table>
-  `;
-
-  const addBtn = section.querySelector('#add-weapon-btn');
-  if (addBtn) {
-    addBtn.removeEventListener('click', addWeapon);
-    addBtn.addEventListener('click', addWeapon);
-  }
-
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-
-  if (character.weapons.length === 0) {
-    character.weapons.push(defaultWeapon());
-  }
-
-  const tbody = section.querySelector("#weapons-tbody");
-  tbody.innerHTML = "";
-  const skillKeys = Object.keys(character.skills);
-  const skillOptions = skillKeys.map(k => `<option value="${k}">${formatSkillName(k)}</option>`).join("");
-
-  character.weapons.forEach((w, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><textarea class="weapon-name" onchange="updateWeapon(${idx}, 'name', this.value)">${escapeHtml(w.name || "")}</textarea></td>
-      <td>
-        <select class="weapon-skill" onchange="updateWeapon(${idx}, 'skill', this.value)">
-          ${skillOptions}
-        </select>
-      </td>
-      <td><input class="weapon-small" type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
-      <td><input type="checkbox" ${w.tag ? "checked" : ""} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.damage || "")}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
-      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'effects', this.value)">${escapeHtml(w.effects || "")}</textarea></td>
-      <td><input value="${escapeHtml(w.type || "")}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.rate || "")}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
-      <td>
-        <select class="weapon-range" onchange="updateWeapon(${idx}, 'range', this.value)">
-          <option value="close"${w.range === "close" ? " selected" : ""}>Close</option>
-          <option value="medium"${w.range === "medium" ? " selected" : ""}>Medium</option>
-          <option value="long"${w.range === "long" ? " selected" : ""}>Long</option>
-          <option value="extreme"${w.range === "extreme" ? " selected" : ""}>Extreme</option>
-        </select>
-      </td>
-      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'qualities', this.value)">${escapeHtml(w.qualities || "")}</textarea></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.ammo || "")}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
-      <td><input class="weapon-small" type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
-    `;
-    tbody.appendChild(tr);
-
-    const skillSel = tr.querySelector(".weapon-skill");
-    if (skillSel && w.skill) skillSel.value = w.skill;
-    const rangeSel = tr.querySelector(".weapon-range");
-    if (rangeSel && w.range) rangeSel.value = w.range;
-  });
-}
-
-function addWeapon() {
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-  character.weapons.push(defaultWeapon());
-  autosave();
   calculateDerivedStats();
-  createWeaponsSection();
 }
 
-function updateWeapon(index, field, value) {
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-  if (!character.weapons[index]) return;
-
-  if (field === "TN" || field === "weight") {
-    character.weapons[index][field] = parseFloat(value) || 0;
-  } else if (field === "tag") {
-    character.weapons[index][field] = !!value;
-  } else {
-    character.weapons[index][field] = value;
-  }
-
-  if (isWeaponEmpty(character.weapons[index])) {
-    character.weapons.splice(index, 1);
-  }
-
-  autosave();
-  calculateDerivedStats();
-  createWeaponsSection();
-}
+// ...existing code for rebuildUIFromCharacter...
 
 function escapeHtml(str) {
   return String(str)
