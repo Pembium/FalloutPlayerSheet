@@ -1,20 +1,24 @@
+// PERK_DATABASE moved to separate file perks.js for maintainability.
+
+// Add character level to defaultCharacter
 const defaultCharacter = () => ({
   name: "",
   origin: "",
   background: "",
   caps: 0,
+  level: 1,
 
   special: {
-     strength: 4,
-     perception: 4,
-     endurance: 4,
-     charisma: 4,
-     intelligence: 4,
-     agility: 4,
-     luck: 4
+     strength: 5,
+     perception: 5,
+     endurance: 5,
+     charisma: 5,
+     intelligence: 5,
+     agility: 5,
+     luck: 5
   },
 
-  specialPointsRemaining: 14,
+  specialPointsRemaining: 10,
   specialLocked: false,
 
   bodyParts: {
@@ -93,7 +97,12 @@ function ensureCharacterShape(ch) {
 function calculateDerivedStats() {
   const s = character.special;
 
+  // Base HP calculation
   character.derived.maxHP = s.endurance + s.luck;
+  
+  // Add Life Giver bonus
+  character.derived.maxHP += getPerkBonus("Life Giver", "maxHP");
+  
   if (character.derived.currentHP > character.derived.maxHP) {
     character.derived.currentHP = character.derived.maxHP;
   }
@@ -116,7 +125,9 @@ function calculateDerivedStats() {
     });
   }
 
+  // Base carry weight + Strong Back bonus
   character.derived.maxCarryWeight = 100 + s.strength * 10;
+  character.derived.maxCarryWeight += getPerkBonus("Strong Back", "carryWeight");
 
   // Melee Damage modifier based on Strength (Fallout TTRPG rulebook)
   if (s.strength >= 11) {
@@ -150,6 +161,10 @@ function updateDerivedSection() {
         <input type="text" value="${escapeHtml(character.name)}" onchange="updatePlayerInfo('name', this.value)">
       </div>
       <div class="info-field">
+        <label>Level</label>
+        <input type="number" min="1" value="${character.level}" onchange="updatePlayerInfo('level', this.value)">
+      </div>
+      <div class="info-field">
         <label>Origin</label>
         <input type="text" value="${escapeHtml(character.origin)}" onchange="updatePlayerInfo('origin', this.value)">
       </div>
@@ -179,13 +194,14 @@ function updateDerivedSection() {
 }
 
 function updatePlayerInfo(field, value) {
-  if (field === "caps") {
-    character.caps = parseInt(value) || 0;
+  if (field === "caps" || field === "level") {
+    character[field] = parseInt(value) || (field === "level" ? 1 : 0);
   } else {
     character[field] = value;
   }
   autosave();
   updateDerivedSection();
+  createPerksSection(); // Re-render perks to update requirements
 }
 
 function updateDerivedValue(field, value) {
@@ -521,125 +537,413 @@ function isPerkEmpty(perk) {
   return !perk.name && Number(perk.rank) === 0 && !perk.effect;
 }
 
+function checkPerkRequirements(perkName, currentRank = 0) {
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return { canTake: false, reasons: ["Perk not found"] };
+  
+  const reasons = [];
+  
+  // Check if already at max rank
+  if (currentRank >= perk.ranks) {
+    return { canTake: false, reasons: ["Already at maximum rank"] };
+  }
+  
+  // Check level requirement
+  const reqLevel = (perk.requirements.level || 1) + (currentRank * (perk.levelIncrement || 0));
+  if (character.level < reqLevel) {
+    reasons.push(`Requires level ${reqLevel}`);
+  }
+  
+  // Check SPECIAL requirements
+  if (perk.requirements.special) {
+    for (const [stat, value] of Object.entries(perk.requirements.special)) {
+      if (character.special[stat] < value) {
+        reasons.push(`Requires ${stat.toUpperCase()} ${value}`);
+      }
+    }
+  }
+  
+  return {
+    canTake: reasons.length === 0,
+    reasons: reasons
+  };
+}
+
+function applyPerkEffects(perkName, rank) {
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return;
+  
+  // Apply Strong Back carry weight bonus
+  if (perk.modifiesCarryWeight) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Apply DR bonuses
+  if (perk.modifiesDR) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Apply poison DR bonus
+  if (perk.modifiesPoisonDR) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Life Giver HP bonus
+  if (perk.modifiesHP) {
+    // Effect applied in calculateDerivedStats
+  }
+  
+  // Re-calculate derived stats to apply perk effects
+  calculateDerivedStats();
+}
+
+function getPerkBonus(perkName, field) {
+  const perkEntry = character.perks.find(p => p.name === perkName);
+  if (!perkEntry || !perkEntry.rank) return 0;
+  
+  const perk = PERK_DATABASE[perkName];
+  if (!perk) return 0;
+  
+  switch(field) {
+    case 'carryWeight':
+      return perk.modifiesCarryWeight ? perk.modifiesCarryWeight * perkEntry.rank : 0;
+    case 'physicalDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'physical') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'energyDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'energy') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'radDR':
+      return (perk.modifiesDR && perk.modifiesDR.type === 'rad') ? perk.modifiesDR.amount * perkEntry.rank : 0;
+    case 'poisonDR':
+      return perk.modifiesPoisonDR ? perk.modifiesPoisonDR : 0;
+    case 'maxHP':
+      if (perk.modifiesHP) {
+        return character.special.endurance * perkEntry.rank;
+      }
+      return 0;
+    default:
+      return 0;
+  }
+}
+
 function createPerksSection() {
   const section = document.getElementById("perks-section");
   
   if (!section) return;
   
   section.innerHTML = `
-    <h2>Perks & Traits <button id="add-perk-btn" class="add-perk">+</button></h2>
+    <h2>Perks & Traits</h2>
+    <div class="perks-controls">
+      <label for="perk-select">Add Perk:</label>
+      <select id="perk-select">
+        <option value="">-- Select a Perk --</option>
+        ${Object.keys(PERK_DATABASE).sort().map(name => `<option value="${name}">${name}</option>`).join('')}
+      </select>
+      <button id="add-perk-btn" class="add-perk">Add</button>
+      <div id="perk-info" class="perk-info"></div>
+    </div>
     <table id="perks-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Rank</th>
-          <th>Effect</th>
+          <th style="width:25%;">Name</th>
+          <th style="width:8%;">Rank</th>
+          <th style="width:50%;">Description</th>
+          <th style="width:17%;">Status</th>
         </tr>
       </thead>
       <tbody id="perks-tbody"></tbody>
     </table>
   `;
 
+  const perkSelect = section.querySelector('#perk-select');
+  const perkInfo = section.querySelector('#perk-info');
   const addBtn = section.querySelector('#add-perk-btn');
+  
+  if (perkSelect) {
+    perkSelect.addEventListener('change', (e) => {
+      const perkName = e.target.value;
+      if (perkName && PERK_DATABASE[perkName]) {
+        const perk = PERK_DATABASE[perkName];
+        const existing = character.perks.find(p => p.name === perkName);
+        const currentRank = existing ? existing.rank : 0;
+        const check = checkPerkRequirements(perkName, currentRank);
+        
+        let reqText = "Requirements: ";
+        const reqs = [];
+        if (perk.requirements.level) reqs.push(`Level ${perk.requirements.level + (currentRank * (perk.levelIncrement || 0))}`);
+        if (perk.requirements.special) {
+          for (const [stat, val] of Object.entries(perk.requirements.special)) {
+            reqs.push(`${stat.toUpperCase()} ${val}`);
+          }
+        }
+        if (reqs.length === 0) reqs.push("None");
+        reqText += reqs.join(", ");
+        
+        const statusHtml = check.canTake 
+          ? '<span class="valid">&#10003; Can take</span>' 
+          : `<span class="invalid">&#10007; ${escapeHtml(check.reasons.join(", "))}</span>`;
+        
+        perkInfo.innerHTML = `
+          <strong>${escapeHtml(perkName)}</strong> (Max Rank: ${perk.ranks})<br>
+          ${escapeHtml(reqText)}<br>
+          ${escapeHtml(perk.description)}<br>
+          ${statusHtml}
+        `;
+      } else {
+        perkInfo.innerHTML = '';
+      }
+    });
+  }
+  
   if (addBtn) {
-    addBtn.removeEventListener('click', addPerk);
-    addBtn.addEventListener('click', addPerk);
+    addBtn.addEventListener('click', () => {
+      const perkName = perkSelect.value;
+      if (!perkName) return;
+      
+      const existing = character.perks.find(p => p.name === perkName);
+      const currentRank = existing ? existing.rank : 0;
+      const check = checkPerkRequirements(perkName, currentRank);
+      
+      if (!check.canTake) {
+        alert(`Cannot take this perk:\n${check.reasons.join("\n")}`);
+        return;
+      }
+      
+      if (existing) {
+        existing.rank += 1;
+      } else {
+        character.perks.push({
+          name: perkName,
+          rank: 1,
+          effect: PERK_DATABASE[perkName].description
+        });
+      }
+      
+      applyPerkEffects(perkName, existing ? existing.rank : 1);
+      autosave();
+      createPerksSection();
+      perkSelect.value = '';
+      perkInfo.innerHTML = '';
+    });
   }
 
   if (!Array.isArray(character.perks)) character.perks = [];
-
-  if (character.perks.length === 0) {
-    character.perks.push(defaultPerk());
-  }
 
   const tbody = section.querySelector("#perks-tbody");
   tbody.innerHTML = "";
 
   character.perks.forEach((perk, idx) => {
+    const perkData = PERK_DATABASE[perk.name];
+    const check = checkPerkRequirements(perk.name, perk.rank);
+    const canIncrease = perkData && check.canTake;
+    const canDecrease = perk.rank > 0;
+    
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input class="perk-name" type="text" value="${escapeHtml(perk.name || "")}" onchange="updatePerk(${idx}, 'name', this.value)"></td>
-      <td><input class="perk-rank" type="number" min="0" value="${perk.rank || 0}" onchange="updatePerk(${idx}, 'rank', this.value)"></td>
-      <td><textarea class="perk-effect" onchange="updatePerk(${idx}, 'effect', this.value)">${escapeHtml(perk.effect || "")}</textarea></td>
+      <td><strong>${escapeHtml(perk.name || "")}</strong></td>
+      <td class="perk-rank-cell">
+        <button class="rank-btn" onclick="adjustPerkRank(${idx}, -1)" ${!canDecrease ? 'disabled' : ''}>-</button>
+        <span class="rank-display">${perk.rank}/${perkData ? perkData.ranks : '?'}</span>
+        <button class="rank-btn" onclick="adjustPerkRank(${idx}, 1)" ${!canIncrease ? 'disabled' : ''}>+</button>
+      </td>
+      <td class="perk-description">${escapeHtml(perk.effect || "")}</td>
+      <td class="perk-status">
+        ${check.canTake ? '<span class="valid">&#10003; Valid</span>' : `<span class="invalid">&#10007; ${check.reasons[0]}</span>`}
+        <button class="remove-btn" onclick="removePerk(${idx})">Remove</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function addPerk() {
-  if (!Array.isArray(character.perks)) character.perks = [];
-  character.perks.push(defaultPerk());
-  autosave();
-  createPerksSection();
-}
-
-function updatePerk(index, field, value) {
-  if (!Array.isArray(character.perks)) character.perks = [];
+function adjustPerkRank(index, delta) {
   if (!character.perks[index]) return;
-
-  if (field === "rank") {
-    character.perks[index][field] = parseInt(value) || 0;
-  } else {
-    character.perks[index][field] = value;
+  
+  const perk = character.perks[index];
+  const newRank = perk.rank + delta;
+  
+  if (newRank <= 0) {
+    removePerk(index);
+    return;
   }
-
-  if (isPerkEmpty(character.perks[index])) {
-    character.perks.splice(index, 1);
+  
+  const check = checkPerkRequirements(perk.name, perk.rank);
+  if (delta > 0 && !check.canTake) {
+    alert(`Cannot increase rank:\n${check.reasons.join("\n")}`);
+    return;
   }
-
+  
+  perk.rank = newRank;
+  applyPerkEffects(perk.name, newRank);
   autosave();
   createPerksSection();
 }
 
-function defaultInventoryItem() {
-  return { item: "", quantity: 0, weight: 0 };
+function removePerk(index) {
+  if (!character.perks[index]) return;
+  character.perks.splice(index, 1);
+  autosave();
+  calculateDerivedStats();
+  createPerksSection();
 }
 
-function isInventoryItemEmpty(inv) {
-  if (!inv) return true;
-  return !inv.item && Number(inv.quantity) === 0 && Number(inv.weight) === 0;
+function createWeaponsSection() {
+  const section = document.getElementById("weapons-section");
+  if (!section) return;
+
+  section.innerHTML = `
+    <h2>Weapons <button class="add-weapon" onclick="addWeapon()">+ Add Weapon</button></h2>
+    <table id="weapons-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Skill</th>
+          <th>TN</th>
+          <th>Tag</th>
+          <th>Damage</th>
+          <th>Effects</th>
+          <th>Type</th>
+          <th>Rate</th>
+          <th>Range</th>
+          <th>Qualities</th>
+          <th>Ammo</th>
+          <th>Weight</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="weapons-tbody"></tbody>
+    </table>
+  `;
+
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+
+  const tbody = section.querySelector("#weapons-tbody");
+  tbody.innerHTML = "";
+
+  // Migration: ensure existing weapon objects have new fields
+  character.weapons.forEach(w => {
+    if (w.tn === undefined) w.tn = 0;
+    if (w.tag === undefined) w.tag = false;
+    if (w.effects === undefined) w.effects = "";
+    if (w.type === undefined) w.type = "";
+    if (w.rate === undefined) w.rate = 0;
+    if (w.range === undefined) w.range = "C";
+    if (w.qualities === undefined && w.notes !== undefined) w.qualities = w.notes; // legacy notes
+    if (w.qualities === undefined) w.qualities = "";
+    if (w.ammo === undefined) w.ammo = 0;
+    if (w.weight === undefined) w.weight = 0;
+    if (w.skill === undefined) w.skill = "";
+  });
+
+  const skillOptions = Object.keys(character.skills).map(k => `<option value="${k}">${formatSkillName(k)}</option>`).join("");
+
+  character.weapons.forEach((weapon, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="text" class="weapon-name" value="${escapeHtml(weapon.name)}" onchange="updateWeapon(${idx}, 'name', this.value)"></td>
+      <td>
+        <select class="weapon-select" onchange="updateWeapon(${idx}, 'skill', this.value)">
+          <option value="">--</option>
+          ${skillOptions.replace(new RegExp(`value=\"${weapon.skill}\"`), `value=\"${weapon.skill}\" selected`)}
+        </select>
+      </td>
+      <td><input type="number" class="weapon-num" min="0" max="99" value="${weapon.tn}" onchange="updateWeapon(${idx}, 'tn', this.value)"></td>
+      <td><input type="checkbox" class="weapon-checkbox" ${weapon.tag ? 'checked' : ''} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
+      <td><input type="number" class="weapon-num" min="0" max="99" value="${weapon.damage}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
+      <td><input type="text" class="weapon-text" value="${escapeHtml(weapon.effects)}" onchange="updateWeapon(${idx}, 'effects', this.value)"></td>
+      <td><input type="text" class="weapon-text" value="${escapeHtml(weapon.type)}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
+      <td><input type="number" class="weapon-num" min="0" max="9" value="${weapon.rate}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
+      <td>
+        <select class="weapon-select" onchange="updateWeapon(${idx}, 'range', this.value)">
+          <option value="C" ${weapon.range === 'C' ? 'selected' : ''}>C</option>
+          <option value="M" ${weapon.range === 'M' ? 'selected' : ''}>M</option>
+          <option value="L" ${weapon.range === 'L' ? 'selected' : ''}>L</option>
+        </select>
+      </td>
+      <td><input type="text" class="weapon-text" value="${escapeHtml(weapon.qualities)}" onchange="updateWeapon(${idx}, 'qualities', this.value)"></td>
+      <td><input type="number" class="weapon-num" min="0" max="99" value="${weapon.ammo}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
+      <td><input type="number" class="weapon-num" min="0" max="99" step="1" value="${weapon.weight}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
+      <td><button onclick="removeWeapon(${idx})">Remove</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addWeapon() {
+  if (!Array.isArray(character.weapons)) character.weapons = [];
+  character.weapons.push({
+    name: "",
+    skill: "",
+    tn: 0,
+    tag: false,
+    damage: 0,
+    effects: "",
+    type: "",
+    rate: 0,
+    range: "C",
+    qualities: "",
+    ammo: 0,
+    weight: 0
+  });
+  autosave();
+  createWeaponsSection();
+  calculateDerivedStats();
+}
+
+function updateWeapon(index, field, value) {
+  if (!character.weapons[index]) return;
+  
+  const numericFields = ['tn','damage','rate','ammo','weight'];
+  if (field === 'tag') {
+    character.weapons[index][field] = !!value;
+  } else if (numericFields.includes(field)) {
+    character.weapons[index][field] = parseInt(value) || 0;
+  } else {
+    character.weapons[index][field] = value;
+  }
+  
+  autosave();
+  calculateDerivedStats();
+}
+
+function removeWeapon(index) {
+  if (!character.weapons[index]) return;
+  character.weapons.splice(index, 1);
+  autosave();
+  createWeaponsSection();
+  calculateDerivedStats();
 }
 
 function createInventorySection() {
   const section = document.getElementById("other-section");
-  
   if (!section) return;
-  
+
   section.innerHTML = `
-    <h2>Inventory <button id="add-inventory-btn" class="add-inventory">+</button></h2>
+    <h2>Inventory <button class="add-inventory" onclick="addInventoryItem()">+ Add Item</button></h2>
     <table id="inventory-table">
       <thead>
         <tr>
-          <th>Item</th>
+          <th>Item Name</th>
           <th>Quantity</th>
           <th>Weight</th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="inventory-tbody"></tbody>
     </table>
   `;
 
-  const addBtn = section.querySelector('#add-inventory-btn');
-  if (addBtn) {
-    addBtn.removeEventListener('click', addInventoryItem);
-    addBtn.addEventListener('click', addInventoryItem);
-  }
-
   if (!Array.isArray(character.inventory)) character.inventory = [];
-
-  if (character.inventory.length === 0) {
-    character.inventory.push(defaultInventoryItem());
-  }
 
   const tbody = section.querySelector("#inventory-tbody");
   tbody.innerHTML = "";
 
-  character.inventory.forEach((inv, idx) => {
+  character.inventory.forEach((item, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><input class="inventory-item" type="text" value="${escapeHtml(inv.item || "")}" onchange="updateInventory(${idx}, 'item', this.value)"></td>
-      <td><input class="inventory-quantity" type="number" min="0" value="${inv.quantity || 0}" onchange="updateInventory(${idx}, 'quantity', this.value)"></td>
-      <td><input class="inventory-weight" type="number" step="0.1" min="0" value="${inv.weight || 0}" onchange="updateInventory(${idx}, 'weight', this.value)"></td>
+      <td><input type="text" value="${escapeHtml(item.name || "")}" onchange="updateInventoryItem(${idx}, 'name', this.value)"></td>
+      <td><input type="number" class="inventory-quantity" min="0" value="${item.quantity || 1}" onchange="updateInventoryItem(${idx}, 'quantity', this.value)"></td>
+      <td><input type="number" class="inventory-weight" min="0" step="0.1" value="${item.weight || 0}" onchange="updateInventoryItem(${idx}, 'weight', this.value)"></td>
+      <td><button onclick="removeInventoryItem(${idx})">Remove</button></td>
     `;
     tbody.appendChild(tr);
   });
@@ -647,171 +951,39 @@ function createInventorySection() {
 
 function addInventoryItem() {
   if (!Array.isArray(character.inventory)) character.inventory = [];
-  character.inventory.push(defaultInventoryItem());
+  character.inventory.push({
+    name: "",
+    quantity: 1,
+    weight: 0
+  });
   autosave();
-  calculateDerivedStats();
   createInventorySection();
 }
 
-function updateInventory(index, field, value) {
-  if (!Array.isArray(character.inventory)) character.inventory = [];
+function updateInventoryItem(index, field, value) {
   if (!character.inventory[index]) return;
-
-  if (field === "quantity" || field === "weight") {
+  
+  if (field === 'quantity') {
+    character.inventory[index][field] = parseInt(value) || 0;
+  } else if (field === 'weight') {
     character.inventory[index][field] = parseFloat(value) || 0;
   } else {
     character.inventory[index][field] = value;
   }
-
-  if (isInventoryItemEmpty(character.inventory[index])) {
-    character.inventory.splice(index, 1);
-  }
-
+  
   autosave();
   calculateDerivedStats();
+}
+
+function removeInventoryItem(index) {
+  if (!character.inventory[index]) return;
+  character.inventory.splice(index, 1);
+  autosave();
   createInventorySection();
-}
-
-function defaultWeapon() {
-  const firstSkill = Object.keys(character.skills)[0] || "";
-  return {
-    name: "",
-    skill: firstSkill,
-    TN: 0,
-    tag: false,
-    damage: "",
-    effects: "",
-    type: "",
-    rate: "",
-    range: "close",
-    qualities: "",
-    ammo: "",
-    weight: 0
-  };
-}
-
-function isWeaponEmpty(w) {
-  if (!w) return true;
-  return !w.name &&
-         (!w.skill || w.skill === "") &&
-         Number(w.TN) === 0 &&
-         !w.tag &&
-         !w.damage &&
-         !w.effects &&
-         !w.type &&
-         !w.rate &&
-         (!w.range || w.range === "close") &&
-         !w.qualities &&
-         !w.ammo &&
-         Number(w.weight) === 0;
-}
-
-function createWeaponsSection() {
-  const section = document.getElementById("weapons-section");
-  section.innerHTML = `
-    <h2>Weapons <button id="add-weapon-btn" class="add-weapon">+</button></h2>
-    <table id="weapons-table">
-      <thead>
-        <tr>
-          <th style="width:18%;">Name</th>
-          <th style="width:10%;">Skill</th>
-          <th style="width:4%;">TN</th>
-          <th style="width:4%;">TAG</th>
-          <th style="width:8%;">Damage</th>
-          <th style="width:15%;">Effects</th>
-          <th style="width:8%;">Type</th>
-          <th style="width:5%;">Rate</th>
-          <th style="width:6%;">Range</th>
-          <th style="width:10%;">Qualities</th>
-          <th style="width:4%;">AMMO</th>
-          <th style="width:6%;">Weight</th>
-        </tr>
-      </thead>
-      <tbody id="weapons-tbody"></tbody>
-    </table>
-  `;
-
-  const addBtn = section.querySelector('#add-weapon-btn');
-  if (addBtn) {
-    addBtn.removeEventListener('click', addWeapon);
-    addBtn.addEventListener('click', addWeapon);
-  }
-
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-
-  if (character.weapons.length === 0) {
-    character.weapons.push(defaultWeapon());
-  }
-
-  const tbody = section.querySelector("#weapons-tbody");
-  tbody.innerHTML = "";
-  const skillKeys = Object.keys(character.skills);
-  const skillOptions = skillKeys.map(k => `<option value="${k}">${formatSkillName(k)}</option>`).join("");
-
-  character.weapons.forEach((w, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><textarea class="weapon-name" onchange="updateWeapon(${idx}, 'name', this.value)">${escapeHtml(w.name || "")}</textarea></td>
-      <td>
-        <select class="weapon-skill" onchange="updateWeapon(${idx}, 'skill', this.value)">
-          ${skillOptions}
-        </select>
-      </td>
-      <td><input class="weapon-small" type="number" min="0" value="${w.TN || 0}" onchange="updateWeapon(${idx}, 'TN', this.value)"></td>
-      <td><input type="checkbox" ${w.tag ? "checked" : ""} onchange="updateWeapon(${idx}, 'tag', this.checked)"></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.damage || "")}" onchange="updateWeapon(${idx}, 'damage', this.value)"></td>
-      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'effects', this.value)">${escapeHtml(w.effects || "")}</textarea></td>
-      <td><input value="${escapeHtml(w.type || "")}" onchange="updateWeapon(${idx}, 'type', this.value)"></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.rate || "")}" onchange="updateWeapon(${idx}, 'rate', this.value)"></td>
-      <td>
-        <select class="weapon-range" onchange="updateWeapon(${idx}, 'range', this.value)">
-          <option value="close"${w.range === "close" ? " selected" : ""}>Close</option>
-          <option value="medium"${w.range === "medium" ? " selected" : ""}>Medium</option>
-          <option value="long"${w.range === "long" ? " selected" : ""}>Long</option>
-          <option value="extreme"${w.range === "extreme" ? " selected" : ""}>Extreme</option>
-        </select>
-      </td>
-      <td><textarea class="weapon-large" onchange="updateWeapon(${idx}, 'qualities', this.value)">${escapeHtml(w.qualities || "")}</textarea></td>
-      <td><input class="weapon-small" value="${escapeHtml(w.ammo || "")}" onchange="updateWeapon(${idx}, 'ammo', this.value)"></td>
-      <td><input class="weapon-small" type="number" step="0.1" min="0" value="${w.weight || 0}" onchange="updateWeapon(${idx}, 'weight', this.value)"></td>
-    `;
-    tbody.appendChild(tr);
-
-    const skillSel = tr.querySelector(".weapon-skill");
-    if (skillSel && w.skill) skillSel.value = w.skill;
-    const rangeSel = tr.querySelector(".weapon-range");
-    if (rangeSel && w.range) rangeSel.value = w.range;
-  });
-}
-
-function addWeapon() {
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-  character.weapons.push(defaultWeapon());
-  autosave();
   calculateDerivedStats();
-  createWeaponsSection();
 }
 
-function updateWeapon(index, field, value) {
-  if (!Array.isArray(character.weapons)) character.weapons = [];
-  if (!character.weapons[index]) return;
-
-  if (field === "TN" || field === "weight") {
-    character.weapons[index][field] = parseFloat(value) || 0;
-  } else if (field === "tag") {
-    character.weapons[index][field] = !!value;
-  } else {
-    character.weapons[index][field] = value;
-  }
-
-  if (isWeaponEmpty(character.weapons[index])) {
-    character.weapons.splice(index, 1);
-  }
-
-  autosave();
-  calculateDerivedStats();
-  createWeaponsSection();
-}
+// ...existing code for rebuildUIFromCharacter...
 
 function escapeHtml(str) {
   return String(str)

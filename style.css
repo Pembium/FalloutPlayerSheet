@@ -83,12 +83,14 @@ section {
 
 .special-label {
   font-weight: 700;
-  margin-bottom: 8px;
-  font-size: 1em;
+  font-size: 0.95em;
   text-transform: uppercase;
   color: #eaeaea;
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
   text-align: center;
 }
 
@@ -98,7 +100,7 @@ section {
 }
 
 .special-input {
-  width: 50px;
+  width: 56px;
   text-align: center;
   padding: 8px 6px;
   border-radius: 4px;
@@ -106,9 +108,12 @@ section {
   background: transparent;
   color: #eee;
   font-weight: 700;
-  font-size: 1.2em;
-  position: relative;
-  z-index: 1;
+  font-size: 1.4em;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .special-input:focus {
@@ -167,8 +172,48 @@ section {
   text-align: center;
 }
 
+#weapons-table .weapon-xsmall {
+  width: 48px;
+  max-width: 60px;
+  text-align: center;
+}
+
+#weapons-table .weapon-name {
+  min-width: 140px;
+}
+
 #weapons-table .weapon-large {
   min-height: 36px;
+}
+
+/* New weapon field sizing */
+#weapons-table .weapon-num {
+  width: 50px;
+  text-align: center;
+}
+
+#weapons-table .weapon-select {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+#weapons-table .weapon-text {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+#weapons-table .weapon-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
 }
 
 .hp-input-group,
@@ -320,6 +365,193 @@ section {
   border: 1px solid #555;
   cursor: pointer;
 }
+
+/* Perks controls */
+.perks-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 6px;
+}
+
+.perks-controls label {
+  font-weight: 600;
+}
+
+#perk-select {
+  flex: 1;
+  max-width: 300px;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #555;
+  background: #333;
+  color: #eee;
+}
+
+.perk-info {
+  flex: 1;
+  padding: 8px;
+  background: #2a2a2a;
+  border-radius: 4px;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+.perk-info .valid {
+  color: #4caf50;
+  font-weight: 600;
+}
+
+.perk-info .invalid {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.perk-rank-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.rank-btn {
+  padding: 2px 8px;
+  font-size: 1em;
+  min-width: 28px;
+}
+
+.rank-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.rank-display {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.perk-description {
+  font-size: 0.9em;
+  line-height: 1.3;
+}
+
+.perk-status {
+  text-align: center;
+}
+
+.perk-status .valid {
+  color: #4caf50;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.perk-status .invalid {
+  color: #f44336;
+  font-size: 0.85em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.remove-btn {
+  padding: 4px 8px;
+  font-size: 0.85em;
+  background: #8b0000;
+}
+
+.remove-btn:hover {
+  background: #a00;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  background: #3a3a3a;
+  color: #eaeaea;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.3s;
+}
+
+button:hover {
+  background: #555;
+}
+
+/* Misc */
+h2 {
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  font-size: 1.5em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remaining-points {
+  font-size: 0.9em;
+  color: #ffd700;
+  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.edit-special {
+  margin-left: 12px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: #3a3a3a;
+  color: #eaeaea;
+  border: 1px solid #555;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.edit-special:hover {
+  background: #555;
+}
+
+.special-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #2a2a2a;
+}
+
+.special-value {
+  font-weight: 700;
+  font-size: 1.6em;
+  color: #ffd700;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  text-align: center;
+}
+
+/* Skills and Combat side-by-side container */
+.skills-combat-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+#skills-section {
+  margin: 0;
+}
+
+#body-parts-section {
+  margin: 0;
+}
+
+/* Body parts & combat layout */
 
 /* Body Parts Section */
 #body-parts-section {
@@ -531,101 +763,7 @@ section {
   width: 60px;
 }
 
-/* Header styling */
-#header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #444;
-}
 
-#header h1 {
-  margin: 0;
-  font-size: 2em;
-  color: #eaeaea;
-  border: none;
-  padding: 0;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.header-buttons button {
-  padding: 10px 16px;
-  font-size: 0.95em;
-}
-
-/* Misc */
-h2 {
-  border-bottom: 1px solid #444;
-  padding-bottom: 8px;
-  margin-bottom: 16px;
-  font-size: 1.5em;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.remaining-points {
-  font-size: 0.9em;
-  color: #ffd700;
-  font-weight: 600;
-  background: rgba(255, 215, 0, 0.1);
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-}
-
-.edit-special {
-  margin-left: 12px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  background: #3a3a3a;
-  color: #eaeaea;
-  border: 1px solid #555;
-  cursor: pointer;
-  font-size: 0.85em;
-}
-
-.edit-special:hover {
-  background: #555;
-}
-
-.special-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #2a2a2a;
-}
-
-.special-value {
-  font-weight: 700;
-  font-size: 1.4em;
-  color: #ffd700;
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 8px 6px;
-}
-
-/* Skills and Combat side-by-side container */
-.skills-combat-container {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 20px;
-  margin: 20px 0;
-}
-
-#skills-section {
-  margin: 0;
-}
-
-#body-parts-section {
-  margin: 0;
-}
 
 /* Skills header */
 .skills-header {
@@ -663,6 +801,11 @@ h2 {
   
   .body-parts-grid {
     grid-template-columns: repeat(2, 1fr);
+    grid-template-areas:
+      "head head"
+      "torso torso"
+      "left-arm right-arm"
+      "left-leg right-leg";
     min-height: 400px;
   }
   
