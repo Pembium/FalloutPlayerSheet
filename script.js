@@ -152,7 +152,10 @@ function calculateDerivedStats() {
 
   if (Array.isArray(character.inventory)) {
     character.inventory.forEach(inv => {
-      character.derived.currentCarryWeight += (inv.weight || 0);
+      const quantity = inv.quantity || 0;
+      const unitWeight = inv.weight || 0;
+      const totalWeight = quantity * unitWeight;
+      character.derived.currentCarryWeight += totalWeight;
     });
   }
 
@@ -185,6 +188,7 @@ function calculateDerivedStats() {
 
 function updateDerivedSection() {
   const d = character.derived;
+  const isOverweight = d.currentCarryWeight > d.maxCarryWeight;
 
   const html = `
     <h2>Player Info</h2>
@@ -212,7 +216,11 @@ function updateDerivedSection() {
     </div>
     <div class="derived-stats-grid">
       <div class="stat-field">
-        <label>Weight</label> <span>${d.currentCarryWeight} / ${d.maxCarryWeight}</span>
+        <label>Weight</label> 
+        <span class="${isOverweight ? 'overweight-warning' : ''}">
+          ${d.currentCarryWeight} / ${d.maxCarryWeight}
+          ${isOverweight ? ' <span class="warning-badge">Carry Weight Exceeded</span>' : ''}
+        </span>
       </div>
       <div class="stat-field">
         <label>Luck</label>
@@ -1079,7 +1087,8 @@ function createInventorySection() {
         <tr>
           <th>Item Name</th>
           <th>Quantity</th>
-          <th>Weight</th>
+          <th>Unit Weight</th>
+          <th>Total Weight</th>
           <th></th>
         </tr>
       </thead>
@@ -1093,11 +1102,16 @@ function createInventorySection() {
   tbody.innerHTML = "";
 
   character.inventory.forEach((item, idx) => {
+    const quantity = item.quantity || 0;
+    const unitWeight = item.weight || 0;
+    const totalWeight = quantity * unitWeight;
+    
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><input type="text" value="${escapeHtml(item.name || "")}" onchange="updateInventoryItem(${idx}, 'name', this.value)"></td>
-      <td><input type="number" class="inventory-quantity" min="0" value="${item.quantity || 1}" onchange="updateInventoryItem(${idx}, 'quantity', this.value)"></td>
-      <td><input type="number" class="inventory-weight" min="0" step="0.1" value="${item.weight || 0}" onchange="updateInventoryItem(${idx}, 'weight', this.value)"></td>
+      <td><input type="number" class="inventory-quantity" min="0" value="${quantity}" onchange="updateInventoryItem(${idx}, 'quantity', this.value)"></td>
+      <td><input type="number" class="inventory-weight" min="0" step="0.1" value="${unitWeight}" onchange="updateInventoryItem(${idx}, 'weight', this.value)"></td>
+      <td><span class="total-weight">${totalWeight.toFixed(1)}</span></td>
       <td><button onclick="removeInventoryItem(${idx})">Remove</button></td>
     `;
     tbody.appendChild(tr);
@@ -1128,14 +1142,7 @@ function updateInventoryItem(index, field, value) {
   
   autosave();
   calculateDerivedStats();
-}
-
-function removeInventoryItem(index) {
-  if (!character.inventory[index]) return;
-  character.inventory.splice(index, 1);
-  autosave();
-  createInventorySection();
-  calculateDerivedStats();
+  createInventorySection(); // Re-render inventory to update total weight
 }
 
 // ...existing code for rebuildUIFromCharacter...

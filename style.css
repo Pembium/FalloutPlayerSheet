@@ -279,6 +279,24 @@ section {
   padding: 6px;
 }
 
+.overweight-warning {
+  color: #f44336;
+  font-weight: 700;
+}
+
+.warning-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 6px 12px;
+  background: #f44336;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Inventory table styling */
 #inventory-table {
   width: 100%;
@@ -304,6 +322,17 @@ section {
 .inventory-quantity,
 .inventory-weight {
   max-width: 100px;
+  text-align: center;
+}
+
+.total-weight {
+  display: inline-block;
+  padding: 6px 12px;
+  color: #ffd700;
+  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 4px;
+  min-width: 60px;
   text-align: center;
 }
 
