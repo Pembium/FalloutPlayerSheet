@@ -467,14 +467,17 @@ function createSkillFields() {
   const section = document.getElementById("skills-section");
   section.innerHTML = `
     <h2>Skills</h2>
-    <div class="skills-header">
-      <div class="skill-header-left">Name</div>
-      <div class="skill-header-right">
-        <span>TAG</span>
-        <span class="skill-sep">|</span>
-        <span>RANK</span>
-      </div>
-    </div>
+    <table id="skills-table">
+      <thead>
+        <tr>
+          <th style="width:45%;">Name</th>
+          <th style="width:15%;">Linked</th>
+          <th style="width:20%;">Trained</th>
+          <th style="width:20%;">Rank</th>
+        </tr>
+      </thead>
+      <tbody id="skills-tbody"></tbody>
+    </table>
   `;
 
   const statAbbr = {
@@ -487,25 +490,19 @@ function createSkillFields() {
     luck: "LCK"
   };
 
+  const tbody = section.querySelector("#skills-tbody");
+  tbody.innerHTML = "";
+
   for (let skill in character.skills) {
     const info = character.skills[skill];
-    const div = document.createElement("div");
-    div.classList.add("skill-field");
-
-    div.innerHTML = `
-      <div class="skill-left">
-        <label class="skill-name">${formatSkillName(skill)}</label>
-        <span class="skill-linked">[${statAbbr[info.linked] || info.linked.toUpperCase()}]</span>
-      </div>
-      <div class="skill-right">
-        <input type="checkbox" class="skill-trained" ${info.trained ? "checked" : ""} onchange="updateSkillTrained('${skill}', this.checked)">
-        <span class="skill-sep">|</span>
-        <input class="skill-rank" type="number" min="0" max="5" value="${info.rank}"
-          onchange="updateSkill('${skill}', this.value)">
-      </div>
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="skill-name-cell">${formatSkillName(skill)}</td>
+      <td class="skill-linked-cell">${statAbbr[info.linked] || info.linked.toUpperCase()}</td>
+      <td class="skill-trained-cell"><input type="checkbox" class="skill-trained" ${info.trained ? "checked" : ""} onchange="updateSkillTrained('${skill}', this.checked)"></td>
+      <td class="skill-rank-cell"><input class="skill-rank" type="number" min="0" max="6" value="${info.rank}" onchange="updateSkill('${skill}', this.value)"></td>
     `;
-
-    section.appendChild(div);
+    tbody.appendChild(tr);
   }
 }
 
