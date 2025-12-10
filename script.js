@@ -33,7 +33,9 @@ const defaultCharacter = () => ({
     charisma: null,
     intelligence: null,
     agility: null,
-    luck: null
+    luck: null,
+    bonusSkillPoints: null,
+    bonusSpecialPoints: null
   },
 
   bodyParts: {
@@ -331,7 +333,9 @@ function toggleCombatEditMode() {
         charisma: null,
         intelligence: null,
         agility: null,
-        luck: null
+        luck: null,
+        bonusSkillPoints: null,
+        bonusSpecialPoints: null
       };
     }
   }
@@ -339,6 +343,7 @@ function toggleCombatEditMode() {
   createHeader(); // Re-render header to update button text
   createSpecialFields();
   createBodyPartsSection();
+  createSkillFields(); // Update skills to show bonus points input
 }
 
 function updateCombatOverride(field, value) {
@@ -367,20 +372,53 @@ function updateSpecialOverride(stat, value) {
   createSkillFields(); // Update skill points when override changes
 }
 
+function updateBonusSkillPoints(value) {
+  if (!character.overrides) {
+    character.overrides = {};
+  }
+  
+  const numValue = parseInt(value);
+  character.overrides.bonusSkillPoints = isNaN(numValue) ? null : numValue;
+  
+  autosave();
+  createSkillFields(); // Re-render to update skill points total
+}
+
+function updateBonusSpecialPoints(value) {
+  if (!character.overrides) {
+    character.overrides = {};
+  }
+  
+  const numValue = parseInt(value);
+  character.overrides.bonusSpecialPoints = isNaN(numValue) ? null : numValue;
+  
+  autosave();
+  createSpecialFields(); // Re-render to update special points total
+}
+
 function createSpecialFields() {
   const section = document.getElementById("special-section");
   const editMode = localStorage.getItem("combatEditMode") === "true";
+  const o = character.overrides || {};
+  
+  const bonusSpecialPoints = editMode && (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
+    ? parseInt(o.bonusSpecialPoints) || 0 
+    : 0;
+  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  
+  const bonusPointsInput = editMode
+    ? `<div style="margin-top: 8px;"><label style="font-size: 0.9em; color: #ffd700;">Bonus SPECIAL Points: </label><input type="number" class="combat-override" style="width: 70px;" value="${o.bonusSpecialPoints || 0}" onchange="updateBonusSpecialPoints(this.value)"></div>`
+    : '';
   
   const headerHtml = editMode
-    ? `<h2>S.P.E.C.I.A.L <span class="edit-mode-indicator">(Edit Mode Active)</span></h2>`
+    ? `<h2>S.P.E.C.I.A.L <span class="edit-mode-indicator">(Edit Mode Active)</span></h2>${bonusPointsInput}`
     : character.specialLocked 
-      ? `<h2>S.P.E.C.I.A.L <button id="edit-special-btn" class="edit-special">Edit</button></h2>`
-      : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${character.specialPointsRemaining}</span></h2>`;
+      ? `<h2>S.P.E.C.I.A.L</h2>`
+      : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${effectiveSpecialRemaining}</span></h2>`;
   
   section.innerHTML = headerHtml;
 
   const stats = Object.keys(character.special);
-  const o = character.overrides || {};
 
   const row = document.createElement("div");
   row.className = "special-row";
@@ -419,14 +457,6 @@ function createSpecialFields() {
   });
 
   section.appendChild(row);
-
-  // Attach edit button listener if locked
-  if (character.specialLocked && !editMode) {
-    const editBtn = section.querySelector('#edit-special-btn');
-    if (editBtn) {
-      editBtn.addEventListener('click', unlockSpecial);
-    }
-  }
 }
 
 function updateSpecial(stat, value) {
@@ -441,8 +471,15 @@ function updateSpecial(stat, value) {
 
   const pointDiff = newValue - oldValue;
   
+  // Calculate effective remaining points (includes bonus from edit mode)
+  const o = character.overrides || {};
+  const bonusSpecialPoints = (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
+    ? parseInt(o.bonusSpecialPoints) || 0 
+    : 0;
+  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  
   // Check if we have enough points
-  if (pointDiff > character.specialPointsRemaining) {
+  if (pointDiff > effectiveSpecialRemaining) {
     // Not enough points, revert to old value
     createSpecialFields();
     return;
@@ -484,6 +521,12 @@ function calculateSkillPoints() {
     totalPoints += effectiveRank * 2;
   }
   
+  // Add bonus skill points from edit mode
+  const o = character.overrides || {};
+  if (o.bonusSkillPoints !== null && o.bonusSkillPoints !== undefined) {
+    totalPoints += parseInt(o.bonusSkillPoints) || 0;
+  }
+  
   // Calculate spent points
   let spentPoints = 0;
   for (let skill in character.skills) {
@@ -500,9 +543,20 @@ function calculateSkillPoints() {
 function createSkillFields() {
   const section = document.getElementById("skills-section");
   const skillPoints = calculateSkillPoints();
+  const editMode = localStorage.getItem("combatEditMode") === "true";
+  const o = character.overrides || {};
+  
+  const skillPointsDisplay = skillPoints.remaining > 0 
+    ? `<span class="remaining-points">Skill Points: ${skillPoints.spent} / ${skillPoints.total}</span>`
+    : '';
+  
+  const bonusPointsInput = editMode
+    ? `<div style="margin-top: 8px;"><label style="font-size: 0.9em; color: #ffd700;">Bonus Skill Points: </label><input type="number" class="combat-override" style="width: 70px;" value="${o.bonusSkillPoints || 0}" onchange="updateBonusSkillPoints(this.value)"></div>`
+    : '';
   
   section.innerHTML = `
-    <h2>Skills <span class="remaining-points">Skill Points: ${skillPoints.spent} / ${skillPoints.total}</span></h2>
+    <h2>Skills ${skillPointsDisplay}</h2>
+    ${bonusPointsInput}
     <table id="skills-table">
       <thead>
         <tr>
