@@ -30,7 +30,7 @@ section {
 
 #skills-table th,
 #skills-table td {
-  padding: 10px 8px;
+  padding: 3px 8px;
   text-align: left;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   vertical-align: middle;
@@ -53,6 +53,7 @@ section {
 .skill-name-cell {
   font-weight: 600;
   color: #eaeaea;
+  white-space: nowrap;
 }
 
 .skill-linked-cell {
@@ -798,9 +799,10 @@ h2 {
 }
 
 .combat-stats-row span {
-  font-size: 1.2em;
+  font-size: 1.1em;
   color: #eaeaea;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .poison-card {

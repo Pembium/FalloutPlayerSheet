@@ -565,25 +565,25 @@ function createBodyPartsSection() {
     
     <div class="combat-stats-row">
       <div class="stat-field">
-        <label>Initiative</label>
         ${editMode ? `
+          <label>Initiative</label>
           <input type="number" class="combat-override" value="${initiativeValue}" onchange="updateCombatOverride('initiative', this.value)">
           <span class="base-value">(Base: ${baseInitiative})</span>
-        ` : `<span>${initiativeValue}</span>`}
+        ` : `<span>Initiative ${initiativeValue}</span>`}
       </div>
       <div class="stat-field">
-        <label>Defense</label>
         ${editMode ? `
+          <label>Defense</label>
           <input type="number" class="combat-override" value="${defenseValue}" onchange="updateCombatOverride('defense', this.value)">
           <span class="base-value">(Base: ${baseDefense})</span>
-        ` : `<span>${defenseValue}</span>`}
+        ` : `<span>Defense ${defenseValue}</span>`}
       </div>
       <div class="stat-field">
-        <label>Melee Damage</label>
         ${editMode ? `
+          <label>Melee Damage</label>
           <input type="number" class="combat-override" value="${meleeDamageValue}" onchange="updateCombatOverride('meleeDamage', this.value)">
           <span class="base-value">(Base: +${baseMeleeDamage})</span>
-        ` : `<span>+${meleeDamageValue}</span>`}
+        ` : `<span>Melee Damage +${meleeDamageValue}</span>`}
       </div>
     </div>
 
