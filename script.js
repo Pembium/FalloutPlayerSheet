@@ -79,6 +79,8 @@ const defaultCharacter = () => ({
      maxLuckPoints: 5
   },
 
+  skillPointsSpent: 0,
+
   perks: [],
   gear: [],
   inventory: [],
@@ -185,6 +187,7 @@ function calculateDerivedStats() {
 
   updateDerivedSection();
   createBodyPartsSection();
+  createSkillFields(); // Update skills display when stats change
 }
 
 function updateDerivedSection() {
@@ -244,6 +247,7 @@ function updatePlayerInfo(field, value) {
   autosave();
   calculateDerivedStats(); // Add this line to recalculate HP when level changes
   updateDerivedSection();
+  createSkillFields(); // Update skill points when level changes
   createPerksSection(); // Re-render perks to update requirements
 }
 
@@ -360,6 +364,7 @@ function updateSpecialOverride(stat, value) {
   autosave();
   calculateDerivedStats();
   createSpecialFields();
+  createSkillFields(); // Update skill points when override changes
 }
 
 function createSpecialFields() {
@@ -455,6 +460,7 @@ function updateSpecial(stat, value) {
   autosave();
   calculateDerivedStats();
   createSpecialFields();
+  createSkillFields(); // Update skill points when SPECIAL changes
 }
 
 function unlockSpecial() {
@@ -463,10 +469,40 @@ function unlockSpecial() {
   createSpecialFields();
 }
 
+function calculateSkillPoints() {
+  const s = {
+    intelligence: getEffectiveSpecial('intelligence')
+  };
+  
+  // Total skill points = (Level - 1) + (9 + Intelligence)
+  let totalPoints = (character.level - 1) + (9 + s.intelligence);
+  
+  // Check if player has "Skilled" perk - each rank adds 2 skill points (max 10 ranks)
+  const skilledPerk = character.perks.find(p => p.name === "Skilled");
+  if (skilledPerk && skilledPerk.rank > 0) {
+    const effectiveRank = Math.min(skilledPerk.rank, 10);
+    totalPoints += effectiveRank * 2;
+  }
+  
+  // Calculate spent points
+  let spentPoints = 0;
+  for (let skill in character.skills) {
+    spentPoints += character.skills[skill].rank;
+  }
+  
+  return {
+    total: totalPoints,
+    spent: spentPoints,
+    remaining: totalPoints - spentPoints
+  };
+}
+
 function createSkillFields() {
   const section = document.getElementById("skills-section");
+  const skillPoints = calculateSkillPoints();
+  
   section.innerHTML = `
-    <h2>Skills</h2>
+    <h2>Skills <span class="remaining-points">Skill Points: ${skillPoints.spent} / ${skillPoints.total}</span></h2>
     <table id="skills-table">
       <thead>
         <tr>
@@ -507,13 +543,37 @@ function createSkillFields() {
 }
 
 function updateSkill(skill, value) {
-  character.skills[skill].rank = parseInt(value) || 0;
+  const newValue = parseInt(value) || 0;
+  const oldValue = character.skills[skill].rank;
+  const skillPoints = calculateSkillPoints();
+  
+  // Calculate what the new spent total would be
+  const pointDiff = newValue - oldValue;
+  const newSpent = skillPoints.spent + pointDiff;
+  
+  // Prevent exceeding max skill points
+  if (newSpent > skillPoints.total) {
+    alert(`Not enough skill points! You have ${skillPoints.remaining} points remaining.`);
+    createSkillFields(); // Re-render to reset the input value
+    return;
+  }
+  
+  // Enforce max rank of 6
+  if (newValue > 6) {
+    alert('Maximum skill rank is 6.');
+    createSkillFields();
+    return;
+  }
+  
+  character.skills[skill].rank = newValue;
   autosave();
+  createSkillFields(); // Re-render to update skill points counter
 }
 
 function updateSkillTrained(skill, checked) {
   character.skills[skill].trained = !!checked;
   autosave();
+  createSkillFields(); // Re-render to update display
 }
 
 function formatSkillName(key) {
@@ -939,6 +999,7 @@ function adjustPerkRank(index, delta) {
   applyPerkEffects(perk.name, newRank);
   autosave();
   createPerksSection();
+  createSkillFields(); // Update skill points when perks change
 }
 
 function removePerk(index) {
@@ -947,6 +1008,7 @@ function removePerk(index) {
   autosave();
   calculateDerivedStats();
   createPerksSection();
+  createSkillFields(); // Update skill points when perks are removed
 }
 
 function createWeaponsSection() {
