@@ -395,7 +395,10 @@ function updateBonusSpecialPoints(value) {
   
   // If bonus points increased and character is locked, unlock to allow spending
   const newBonus = character.overrides.bonusSpecialPoints || 0;
-  if (newBonus > oldBonus && character.specialLocked) {
+  const intenseTrainingPerk = character.perks.find(p => p.name === "Intense Training");
+  const intenseTrainingBonus = intenseTrainingPerk ? intenseTrainingPerk.rank : 0;
+  
+  if ((newBonus > oldBonus || intenseTrainingBonus > 0) && character.specialLocked) {
     character.specialLocked = false;
   }
   
@@ -408,10 +411,14 @@ function createSpecialFields() {
   const editMode = localStorage.getItem("combatEditMode") === "true";
   const o = character.overrides || {};
   
+  // Calculate bonus SPECIAL points from Intense Training perk
+  const intenseTrainingPerk = character.perks.find(p => p.name === "Intense Training");
+  const intenseTrainingBonus = intenseTrainingPerk ? intenseTrainingPerk.rank : 0;
+  
   const bonusSpecialPoints = (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
     ? parseInt(o.bonusSpecialPoints) || 0 
     : 0;
-  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints + intenseTrainingBonus;
   
   // Show bonus points input only in edit mode (aligns with skills bonus points)
   const bonusPointsInput = editMode
@@ -422,7 +429,7 @@ function createSpecialFields() {
     ? `<h2>S.P.E.C.I.A.L <span class="edit-mode-indicator">(Edit Mode Active)</span></h2>${bonusPointsInput}`
     : character.specialLocked 
       ? `<h2>S.P.E.C.I.A.L</h2>`
-      : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${effectiveSpecialRemaining}</span></h2>`;
+      : `<h2>S.P.E.C.I.A.L <span class="remaining-points">Remaining Points: ${effectiveSpecialRemaining}${intenseTrainingBonus > 0 ? ` (+${intenseTrainingBonus} from Intense Training)` : ''}</span></h2>`;
   
   section.innerHTML = headerHtml;
 
@@ -479,12 +486,14 @@ function updateSpecial(stat, value) {
 
   const pointDiff = newValue - oldValue;
   
-  // Calculate effective remaining points (includes bonus from edit mode)
+  // Calculate effective remaining points (includes bonus from edit mode and Intense Training)
   const o = character.overrides || {};
   const bonusSpecialPoints = (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
     ? parseInt(o.bonusSpecialPoints) || 0 
     : 0;
-  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  const intenseTrainingPerk = character.perks.find(p => p.name === "Intense Training");
+  const intenseTrainingBonus = intenseTrainingPerk ? intenseTrainingPerk.rank : 0;
+  const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints + intenseTrainingBonus;
   
   // Check if we have enough points
   if (pointDiff > effectiveSpecialRemaining) {
@@ -496,10 +505,10 @@ function updateSpecial(stat, value) {
   character.special[stat] = newValue;
   character.specialPointsRemaining -= pointDiff;
 
-  // Auto-lock when effective points (including bonus) reach 0
-  const newEffectiveRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  // Auto-lock when effective points (including bonus and Intense Training) reach 0
+  const newEffectiveRemaining = character.specialPointsRemaining + bonusSpecialPoints + intenseTrainingBonus;
   if (newEffectiveRemaining <= 0) {
-    character.specialPointsRemaining = -bonusSpecialPoints; // Adjust base to make effective = 0
+    character.specialPointsRemaining = -(bonusSpecialPoints + intenseTrainingBonus); // Adjust base to make effective = 0
     character.specialLocked = true;
   }
 
@@ -714,7 +723,8 @@ function createBodyPartsSection() {
       
       <div class="body-part-card poison-card">
         <div class="card-header">POISON DR</div>
-        <input type="number" min="0" class="poison-input" value="${character.poisonDR || 0}" onchange="updatePoisonDR(this.value)">
+        <input type="number" min="0" class="poison-input" value="${(character.poisonDR || 0) + getTotalPerkBonus('poisonDR')}" onchange="updatePoisonDR(this.value)"${getTotalPerkBonus('poisonDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}>
+        ${getTotalPerkBonus('poisonDR') > 0 ? `<div style="text-align: center; margin-top: 4px; font-size: 0.7em; color: #888;">(+${getTotalPerkBonus('poisonDR')} from perks)</div>` : ''}
       </div>
 
       <div class="body-part-card health-card">
@@ -741,9 +751,9 @@ function createBodyPartsSection() {
       <div class="body-part-card head-card">
         <div class="card-header">HEAD (1-2)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.head.physDR}" onchange="updateBodyPart('head', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.head.radDR}" onchange="updateBodyPart('head', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.head.enDR}" onchange="updateBodyPart('head', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.head.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('head', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.head.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('head', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.head.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('head', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.head.currentHP}" onchange="updateBodyPart('head', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -751,9 +761,9 @@ function createBodyPartsSection() {
       <div class="body-part-card left-arm-card">
         <div class="card-header">LEFT ARM (9-11)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftArm.physDR}" onchange="updateBodyPart('leftArm', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftArm.radDR}" onchange="updateBodyPart('leftArm', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftArm.enDR}" onchange="updateBodyPart('leftArm', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftArm.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('leftArm', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftArm.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('leftArm', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftArm.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('leftArm', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.leftArm.currentHP}" onchange="updateBodyPart('leftArm', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -761,9 +771,9 @@ function createBodyPartsSection() {
       <div class="body-part-card right-arm-card">
         <div class="card-header">RIGHT ARM (12-14)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightArm.physDR}" onchange="updateBodyPart('rightArm', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightArm.radDR}" onchange="updateBodyPart('rightArm', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightArm.enDR}" onchange="updateBodyPart('rightArm', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightArm.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('rightArm', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightArm.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('rightArm', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightArm.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('rightArm', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.rightArm.currentHP}" onchange="updateBodyPart('rightArm', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -771,9 +781,9 @@ function createBodyPartsSection() {
       <div class="body-part-card torso-card">
         <div class="card-header">TORSO (3-8)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.torso.physDR}" onchange="updateBodyPart('torso', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.torso.radDR}" onchange="updateBodyPart('torso', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.torso.enDR}" onchange="updateBodyPart('torso', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.torso.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('torso', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.torso.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('torso', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.torso.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('torso', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.torso.currentHP}" onchange="updateBodyPart('torso', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -781,9 +791,9 @@ function createBodyPartsSection() {
       <div class="body-part-card left-leg-card">
         <div class="card-header">LEFT LEG (15-17)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftLeg.physDR}" onchange="updateBodyPart('leftLeg', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftLeg.radDR}" onchange="updateBodyPart('leftLeg', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftLeg.enDR}" onchange="updateBodyPart('leftLeg', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.leftLeg.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('leftLeg', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.leftLeg.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('leftLeg', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.leftLeg.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('leftLeg', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.leftLeg.currentHP}" onchange="updateBodyPart('leftLeg', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -791,9 +801,9 @@ function createBodyPartsSection() {
       <div class="body-part-card right-leg-card">
         <div class="card-header">RIGHT LEG (18-20)</div>
         <div class="body-part-grid">
-          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightLeg.physDR}" onchange="updateBodyPart('rightLeg', 'physDR', this.value)"></div>
-          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightLeg.radDR}" onchange="updateBodyPart('rightLeg', 'radDR', this.value)"></div>
-          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightLeg.enDR}" onchange="updateBodyPart('rightLeg', 'enDR', this.value)"></div>
+          <div class="dr-field"><label>Phys. DR</label><input type="number" min="0" value="${bp.rightLeg.physDR + getTotalPerkBonus('physDR')}" onchange="updateBodyPart('rightLeg', 'physDR', this.value)"${getTotalPerkBonus('physDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('physDR') > 0 ? `(+${getTotalPerkBonus('physDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>Rad. DR</label><input type="number" min="0" value="${bp.rightLeg.radDR + getTotalPerkBonus('radDR')}" onchange="updateBodyPart('rightLeg', 'radDR', this.value)"${getTotalPerkBonus('radDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('radDR') > 0 ? `(+${getTotalPerkBonus('radDR')} from perks)` : ''}</span></div>
+          <div class="dr-field"><label>En. DR</label><input type="number" min="0" value="${bp.rightLeg.enDR + getTotalPerkBonus('enDR')}" onchange="updateBodyPart('rightLeg', 'enDR', this.value)"${getTotalPerkBonus('enDR') > 0 ? ' style="background: rgba(255, 215, 0, 0.1); border-color: #ffd700;"' : ''}><span style="font-size: 0.7em; color: #888;">${getTotalPerkBonus('enDR') > 0 ? `(+${getTotalPerkBonus('enDR')} from perks)` : ''}</span></div>
           <div class="dr-field"><label>HP</label><input type="number" min="0" value="${bp.rightLeg.currentHP}" onchange="updateBodyPart('rightLeg', 'currentHP', this.value)"></div>
         </div>
       </div>
@@ -804,14 +814,31 @@ function createBodyPartsSection() {
 
 function updateBodyPart(part, field, value) {
   if (!character.bodyParts[part]) return;
-  character.bodyParts[part][field] = parseInt(value) || 0;
+  let numValue = parseInt(value) || 0;
+  
+  // If this is a DR field, subtract perk bonuses to get the base value
+  if (field === 'physDR') {
+    numValue -= getTotalPerkBonus('physDR');
+  } else if (field === 'radDR') {
+    numValue -= getTotalPerkBonus('radDR');
+  } else if (field === 'enDR') {
+    numValue -= getTotalPerkBonus('enDR');
+  }
+  
+  // Ensure we don't store negative values
+  character.bodyParts[part][field] = Math.max(0, numValue);
   autosave();
   createBodyPartsSection();
 }
 
 function updatePoisonDR(value) {
-  character.poisonDR = parseInt(value) || 0;
+  let numValue = parseInt(value) || 0;
+  // Subtract perk bonuses to get the base value
+  numValue -= getTotalPerkBonus('poisonDR');
+  // Ensure we don't store negative values
+  character.poisonDR = Math.max(0, numValue);
   autosave();
+  createBodyPartsSection();
 }
 
 function defaultPerk() {
@@ -859,28 +886,17 @@ function applyPerkEffects(perkName, rank) {
   const perk = PERK_DATABASE[perkName];
   if (!perk) return;
   
-  // Apply Strong Back carry weight bonus
-  if (perk.modifiesCarryWeight) {
-    // Effect applied in calculateDerivedStats
-  }
+  // Note: Most perk effects are calculated dynamically in getPerkBonus() and applied in:
+  // - calculateDerivedStats() for carry weight, HP, DR
+  // - createBodyPartsSection() for body part DR values
+  // - getEffectiveSpecial() could be used for SPECIAL modifications
   
-  // Apply DR bonuses
-  if (perk.modifiesDR) {
-    // Effect applied in calculateDerivedStats
-  }
-  
-  // Apply poison DR bonus
-  if (perk.modifiesPoisonDR) {
-    // Effect applied in calculateDerivedStats
-  }
-  
-  // Life Giver HP bonus
-  if (perk.modifiesHP) {
-    // Effect applied in calculateDerivedStats
-  }
+  // Special handling for perks that need immediate application:
+  // Intense Training, TAG!, and Skilled are handled in their respective UI sections
   
   // Re-calculate derived stats to apply perk effects
   calculateDerivedStats();
+  createBodyPartsSection();
 }
 
 function getPerkBonus(perkName, field) {
@@ -894,8 +910,10 @@ function getPerkBonus(perkName, field) {
     case 'carryWeight':
       return perk.modifiesCarryWeight ? perk.modifiesCarryWeight * perkEntry.rank : 0;
     case 'physicalDR':
+    case 'physDR':
       return (perk.modifiesDR && perk.modifiesDR.type === 'physical') ? perk.modifiesDR.amount * perkEntry.rank : 0;
     case 'energyDR':
+    case 'enDR':
       return (perk.modifiesDR && perk.modifiesDR.type === 'energy') ? perk.modifiesDR.amount * perkEntry.rank : 0;
     case 'radDR':
       return (perk.modifiesDR && perk.modifiesDR.type === 'rad') ? perk.modifiesDR.amount * perkEntry.rank : 0;
@@ -909,6 +927,19 @@ function getPerkBonus(perkName, field) {
     default:
       return 0;
   }
+}
+
+// Calculate total perk bonus for a field from all perks
+function getTotalPerkBonus(field) {
+  if (!Array.isArray(character.perks)) return 0;
+  
+  let total = 0;
+  character.perks.forEach(perkEntry => {
+    if (perkEntry.rank > 0) {
+      total += getPerkBonus(perkEntry.name, field);
+    }
+  });
+  return total;
 }
 
 function createPerksSection() {
@@ -1004,9 +1035,15 @@ function createPerksSection() {
         });
       }
       
+      // If Intense Training is added and SPECIAL is locked, unlock it
+      if (perkName === "Intense Training" && character.specialLocked) {
+        character.specialLocked = false;
+      }
+      
       applyPerkEffects(perkName, existing ? existing.rank : 1);
       autosave();
       createPerksSection();
+      createSpecialFields(); // Update SPECIAL points display
       perkSelect.value = '';
       perkInfo.innerHTML = '';
     });
@@ -1059,18 +1096,29 @@ function adjustPerkRank(index, delta) {
   }
   
   perk.rank = newRank;
+  
+  // If Intense Training rank increased and SPECIAL is locked, unlock it
+  if (perk.name === "Intense Training" && delta > 0 && character.specialLocked) {
+    character.specialLocked = false;
+  }
+  
   applyPerkEffects(perk.name, newRank);
   autosave();
   createPerksSection();
+  createSpecialFields(); // Update SPECIAL points display
   createSkillFields(); // Update skill points when perks change
 }
 
 function removePerk(index) {
   if (!character.perks[index]) return;
+  
+  const perk = character.perks[index];
+  
   character.perks.splice(index, 1);
   autosave();
   calculateDerivedStats();
   createPerksSection();
+  createSpecialFields(); // Update SPECIAL points display
   createSkillFields(); // Update skill points when perks are removed
 }
 
