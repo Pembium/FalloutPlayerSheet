@@ -390,7 +390,14 @@ function updateBonusSpecialPoints(value) {
   }
   
   const numValue = parseInt(value);
+  const oldBonus = character.overrides.bonusSpecialPoints || 0;
   character.overrides.bonusSpecialPoints = isNaN(numValue) ? null : numValue;
+  
+  // If bonus points increased and character is locked, unlock to allow spending
+  const newBonus = character.overrides.bonusSpecialPoints || 0;
+  if (newBonus > oldBonus && character.specialLocked) {
+    character.specialLocked = false;
+  }
   
   autosave();
   createSpecialFields(); // Re-render to update special points total
@@ -401,11 +408,12 @@ function createSpecialFields() {
   const editMode = localStorage.getItem("combatEditMode") === "true";
   const o = character.overrides || {};
   
-  const bonusSpecialPoints = editMode && (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
+  const bonusSpecialPoints = (o.bonusSpecialPoints !== null && o.bonusSpecialPoints !== undefined) 
     ? parseInt(o.bonusSpecialPoints) || 0 
     : 0;
   const effectiveSpecialRemaining = character.specialPointsRemaining + bonusSpecialPoints;
   
+  // Show bonus points input only in edit mode (aligns with skills bonus points)
   const bonusPointsInput = editMode
     ? `<div style="margin-top: 8px;"><label style="font-size: 0.9em; color: #ffd700;">Bonus SPECIAL Points: </label><input type="number" class="combat-override" style="width: 70px;" value="${o.bonusSpecialPoints || 0}" onchange="updateBonusSpecialPoints(this.value)"></div>`
     : '';
@@ -488,9 +496,10 @@ function updateSpecial(stat, value) {
   character.special[stat] = newValue;
   character.specialPointsRemaining -= pointDiff;
 
-  // Auto-lock when points reach 0
-  if (character.specialPointsRemaining <= 0) {
-    character.specialPointsRemaining = 0;
+  // Auto-lock when effective points (including bonus) reach 0
+  const newEffectiveRemaining = character.specialPointsRemaining + bonusSpecialPoints;
+  if (newEffectiveRemaining <= 0) {
+    character.specialPointsRemaining = -bonusSpecialPoints; // Adjust base to make effective = 0
     character.specialLocked = true;
   }
 
